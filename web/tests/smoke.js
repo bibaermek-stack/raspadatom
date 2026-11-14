@@ -73,6 +73,13 @@ const check = (ok, msg) => { if (!ok) fail.push(msg); };
     check(/cfl/.test(await page.textContent('#camCalState')), name + ': CFL автокалибровкасы өтпеді: ' + await page.textContent('#camCalMsg'));
     for (const i of [1, 2, 3, 8]) { await page.locator('#camSamples .chip').nth(i).click(); await page.waitForTimeout(250); }
     check(await page.locator('#camAiBody .bar').count() > 3, name + ': камера: үлгілерден кейін ЖИ жоқ');
+    // қолмен ROI: суретте сызық сүйреу (автоматты табу сәтсіз болатын нақты фотолар үшін)
+    const box = await page.locator('#camCanvas').boundingBox();
+    await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.5); await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.52, { steps: 4 }); await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.55, { steps: 4 }); await page.mouse.up();
+    await page.waitForTimeout(300);
+    check(/ROI қолмен берілді/.test(await page.textContent('#camStatus')) && await page.isChecked('#camLock'), name + ': қолмен ROI істемеді: ' + await page.textContent('#camStatus'));
+    check(await page.locator('#camAiBody .bar').count() > 3, name + ': қолмен ROI-дан кейін ЖИ жоқ');
     await page.setInputFiles('#camFile', pngPath); await page.waitForTimeout(500);
     check(/ne\.png/.test(await page.textContent('#camStatus')), name + ': PNG жүктелмеді: ' + await page.textContent('#camStatus'));
     await page.click('#camLive'); await page.waitForTimeout(2500);

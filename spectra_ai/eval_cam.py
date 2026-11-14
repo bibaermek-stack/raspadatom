@@ -1,6 +1,6 @@
 """Камера моделін бағалау: жалпы метрика, шарттар бойынша бөлу, лаборатория моделімен салыстыру, тәуелсіз қолмен жасалған көздер.
 
-  python -m spectra_ai.eval_cam [--n 3000] [--checkpoint checkpoints/camera_net.pt]
+  python -m spectra_ai.eval_cam [--n 3000] [--checkpoint checkpoints/camera_net.pt] [--previous eski_camera_net.pt]
 """
 from __future__ import annotations
 
@@ -35,12 +35,14 @@ def main():
     ap.add_argument("--n", type=int, default=3000)
     ap.add_argument("--checkpoint", default="checkpoints/camera_net.pt")
     ap.add_argument("--baseline", default="checkpoints/spectral_net.pt")
+    ap.add_argument("--previous", default=None, help="алдыңғы камера моделі (ортақ атомдық түрлер бойынша салыстыру)")
     a = ap.parse_args()
 
     db = load_database()
     cam, species = load(a.checkpoint)
     base, base_species = load(a.baseline)
-    base_idx = [base_species.index(s) for s in species]       # екі модельдің ортақ түрлері
+    base_cols = [j for j, s in enumerate(species) if s in base_species]       # екі модельдің ортақ атомдық түрлері («CFL» көз класы лабораториялық модельде жоқ)
+    base_idx = [base_species.index(species[j]) for j in base_cols]
 
     X, Y, META = [], [], []
     for i in range(a.n):
@@ -52,7 +54,13 @@ def main():
         pc = (cam(X)[0] > 0).numpy().astype(float)
         full = np.stack([np.interp(GRID, CAM_GRID, x[0], left=0, right=0) for x in X.numpy()]).astype(np.float32)
         full /= full.max(1, keepdims=True) + 1e-8
-        pb = (base(torch.from_numpy(full)[:, None])[0] > 0).numpy().astype(float)[:, base_idx]
+        pb = np.zeros_like(pc)
+        pb[:, base_cols] = (base(torch.from_numpy(full)[:, None])[0] > 0).numpy().astype(float)[:, base_idx]   # CFL үшін 0 (класы жоқ)
+        if a.previous:
+            prev, prev_species = load(a.previous)
+            pp = np.zeros_like(pc)
+            cols = [j for j, s in enumerate(species) if s in prev_species]
+            pp[:, cols] = (prev(X)[0] > 0).numpy().astype(float)[:, [prev_species.index(species[j]) for j in cols]]
 
     def agg(mask, pred):
         t = pred[mask]; y = Y[mask]
@@ -62,7 +70,14 @@ def main():
     has = k > 0
     out = {"n": a.n, "camera_model": agg(np.ones(a.n, bool), pc), "lab_model_on_camera_spectra": agg(np.ones(a.n, bool), pb),
            "empty_false_positive": round(float(((pc.sum(1) > 0) & ~has)[~has].mean()), 3)}
-    out["by_fwhm_nm"] = {f"{lo}-{hi}": agg((fw >= lo) & (fw < hi) & has, pc) for lo, hi in [(1.5, 3), (3, 6), (6, 12.1)]}
+    if a.previous:
+        out["previous_camera_model"] = agg(np.ones(a.n, bool), pp)
+    cfl = np.array([m["cfl"] for m in META])
+    if "CFL" in species:
+        j = species.index("CFL")
+        out["cfl"] = {"recall": round(float(pc[(Y[:, j] > 0), j].mean()), 3), "false_positive_rate": round(float(pc[~(Y[:, j] > 0), j].mean()), 4),
+                      "n_labelled": int((Y[:, j] > 0).sum()), "n_cfl_samples": int(cfl.sum())}
+    out["by_fwhm_nm"] = {f"{lo}-{hi}": agg((fw >= lo) & (fw < hi) & has, pc) for lo, hi in [(1.5, 3), (3, 6), (6, 12), (12, 30)]}
     out["by_calibration_error_nm"] = {f"{lo}-{hi}": agg((ce >= lo) & (ce < hi) & has, pc) for lo, hi in [(0, 2), (2, 5), (5, 100)]}
     out["by_species_count"] = {str(j): agg((k == j), pc) for j in (1, 2, 3)}
     # әр түр бойынша recall (бір түрлі үлгілерде)

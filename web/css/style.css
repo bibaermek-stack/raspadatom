@@ -192,7 +192,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 @media (min-width: 820px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: 1 / -1; } }
 @media (min-width: 1240px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: auto; } }
 .cam-stage { position: relative; background: #03060b; }
-.cam-stage canvas { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
+.cam-stage canvas { touch-action: none; cursor: crosshair; display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
 #camGraph { height: 270px; margin-top: 0; background: var(--graph-bg); border: 1px solid var(--line); border-radius: 6px; cursor: crosshair; display: block; width: 100%; }
 .cal-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; margin-top: 10px; }
 .num-in { width: 96px; margin-left: 6px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-2); color: var(--fg); font: 13px var(--font-mono); }

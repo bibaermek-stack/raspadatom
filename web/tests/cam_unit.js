@@ -106,4 +106,67 @@ ok('colorDirection: көк оң жақта болса flip', () => {
   assert.strictEqual(C.colorDirection(mk(true)).flip, true);
 });
 
+// ---------- түс бойынша калибровка, квадраттық дисперсия, CFL көз класы ----------
+function bruton(l) {           // толқын ұзындығы -> [r,g,b] 0..1 (түс шкаласы)
+  let r = 0, g = 0, b = 0;
+  if (l >= 380 && l < 440) { r = -(l - 440) / 60; b = 1; } else if (l < 490) { g = (l - 440) / 50; b = 1; } else if (l < 510) { g = 1; b = -(l - 510) / 20; }
+  else if (l < 580) { r = (l - 510) / 70; g = 1; } else if (l < 645) { r = 1; g = -(l - 645) / 65; } else if (l <= 780) { r = 1; }
+  return [r, g, b];
+}
+ok('hueLambda: түс -> толқын ұзындығы реті және null жағдайлары', () => {
+  const L = [[0.3, 0.1, 1], [0, 0.8, 1], [0, 1, 0.1], [1, 1, 0], [1, 0.2, 0]].map(c => C.hueLambda(...c));
+  assert(L.every(v => v !== null) && L.every((v, i) => i === 0 || v > L[i - 1]), 'өсу реті: ' + L.map(v => v && v.toFixed(0)));
+  assert(Math.abs(C.hueLambda(0, 1, 0) - 510) < 1 && Math.abs(C.hueLambda(1, 0, 0) - 645) < 1);
+  assert.strictEqual(C.hueLambda(0.8, 0.8, 0.8), null, 'ақ/сұр');
+  assert.strictEqual(C.hueLambda(1, 0, 1), null, 'қызыл-күлгін екіұшты');
+  assert.strictEqual(C.hueLambda(0, 0, 0), null);
+});
+function rainbowProfile(a, b, M, c) {
+  const o = { M, p: new Float32Array(M).fill(1), R: new Float32Array(M), G: new Float32Array(M), B: new Float32Array(M) };
+  for (let i = 0; i < M; i++) { const [r, g, bb] = bruton(a * i + b + (c || 0) * i * i); o.R[i] = 0.8 * r; o.G[i] = 0.8 * g; o.B[i] = 0.8 * bb; }   // 0.8: қанығусыз
+  return o;
+}
+ok('calibrateByHue: сызықтық түс шкаласы ±20 нм', () => {
+  [[0.5, 400], [-0.45, 700], [0.7, 380]].forEach(([a, b]) => {
+    const M = 560, c = C.calibrateByHue(rainbowProfile(a, b, M)), mid = (M / 2);
+    assert(c && c.kind === 'hue' && c.approx, 'калибровка жоқ ' + a);
+    const err = Math.abs(C.lam(c, mid) - (a * mid + b)), errA = Math.abs(c.a - a) / Math.abs(a);
+    assert(err < 20 && errA < 0.2, `a=${a}: орта қателік ${err.toFixed(1)} нм, масштаб ${errA.toFixed(2)}`);
+  });
+  assert.strictEqual(C.calibrateByHue({ M: 300, p: new Float32Array(300).fill(1), R: new Float32Array(300).fill(0.7), G: new Float32Array(300).fill(0.7), B: new Float32Array(300).fill(0.7) }), null, 'ақ жарық: түс жоқ');
+});
+ok('lam/idx: квадраттық калибровка өзара кері', () => {
+  const cal = { a: 0.5, b: 385, c: -3e-5 };
+  [0, 100, 450, 899].forEach(i => assert(Math.abs(C.idx(cal, C.lam(cal, i), 900) - i) < 1e-6, 'idx(lam(i)) = i'));
+  assert(Math.abs(C.localDisp(cal, 450) - (0.5 - 2 * 3e-5 * 450)) < 1e-9);
+  assert(Math.abs(C.disp(cal, 900) - Math.abs((C.lam(cal, 899) - C.lam(cal, 0)) / 899)) < 1e-12);
+});
+function cflProfileQ(cal, M, fwhm, seed) {       // CFL профилі: ixd бойынша кері есептеу (квадраттық калибровка)
+  const rng = P.mulberry32(seed), gs = P.gaussSource(rng), p = new Float32Array(M), s = fwhm / 2.3548;
+  const lines = [[404.66, 0.12], [435.83, 0.5], [487.7, 0.3], [544.5, 1.0], [578.0, 0.18], [611.6, 0.95], [650, 0.14], [690, 0.2]];
+  for (let i = 0; i < M; i++) {
+    const l = C.lam(cal, i); let v = 0.04 + 0.4 * G(l, 450, 22);
+    lines.forEach(([c, h]) => { v += h * G(l, c, s); });
+    p[i] = Math.max(0, v + 0.01 * gs());
+  }
+  return { p };
+}
+ok('autoCalibrateCFL: квадраттық дисперсия (объектив/перспектива)', () => {
+  const tru = { a: 0.5, b: 385, c: -3.3e-5 }, M = 900, prof = cflProfileQ(tru, M, 5, 21), c = C.autoCalibrateCFL(prof);
+  assert(c, 'калибровка табылмады');
+  // қалыпты индекске нақты сызықтар түскен жерде сызықтық емес үлгі дәл болуы керек
+  let worst = 0;
+  [435.83, 544.5, 611.6, 690].forEach(wl => { const i = C.idx(tru, wl, M); worst = Math.max(worst, Math.abs(C.lam(c, i) - wl)); });
+  assert(worst < 3, 'ең үлкен қателік ' + worst.toFixed(2) + ' нм, c=' + c.c + ', rms=' + c.rms.toFixed(2));
+  assert(c.c && c.c < 0, 'квадраттық мүше табылуы керек: ' + c.c);
+});
+ok('verify: CFL көз класы (Hg + Tb/Eu) сызықтармен расталады', () => {
+  const cal = { a: 0.55, b: 385 }, prof = cflProfile(cal.a, cal.b, 760, 5, 31);
+  const v = C.verify(prof, cal, 5, [{ sp: C.CFL_SPECIES, conc: 1 }], [], 8000), ps = v.perSpecies[0];
+  assert(ps.name === 'CFL' && ps.expected.length >= 6, 'күтілетін сызықтар ' + ps.expected.length);
+  assert(ps.found / ps.expected.length >= 0.5, `табылғаны ${ps.found}/${ps.expected.length}`);   // сынақ профилінде Eu 593 мен 700 жоқ: 8 күтілгеннен ≤ 6 бар
+  const bad = C.verify(cflProfile(cal.a, cal.b + 40, 760, 5, 32), { a: cal.a, b: cal.b }, 5, [{ sp: C.CFL_SPECIES, conc: 1 }], [], 8000).perSpecies[0];
+  assert(bad.found < ps.found, 'ығысқан (40 нм) профильде сәйкестік төмендейді');
+});
+
 console.log(JSON.stringify({ ok: true, tests: n }));
