@@ -27,7 +27,7 @@ class SpectralAttentionNet(nn.Module):
     def __init__(self, num_species: int, n_points: int = 2048, d_model: int = 64):
         super().__init__()
         # 2048 -> 512 -> 128 токен
-        self.conv = nn.Sequential(conv_block(1, 32, 7), conv_block(32, d_model, 5))
+        self.conv = nn.Sequential(conv_block(2, 32, 7), conv_block(32, d_model, 5))
         tokens = n_points // 16
         self.register_buffer("pos", sinusoidal_positions(tokens, d_model), persistent=False)
         layer = nn.TransformerEncoderLayer(
@@ -37,7 +37,9 @@ class SpectralAttentionNet(nn.Module):
         self.cls_head = nn.Linear(2 * d_model, num_species)  # логиттер (sigmoid -> бар/жоқ)
         self.temp_head = nn.Linear(2 * d_model, 1)           # T_norm ∈ [0, 1]
 
-    def forward(self, x):                       # x: (B, 1, 2048)
+    def forward(self, x):                       # x: (B, 1, 2048), 0..1
+        # 2 арна: сызықтық және √ (әлсіз сызықтарды шудан бөліп алуға көмектеседі)
+        x = torch.cat([x, x.clamp_min(0).sqrt()], dim=1)
         f = self.conv(x).permute(0, 2, 1)       # (B, 128, d)
         f = self.attention(f + self.pos)
         z = torch.cat([f.mean(1), f.amax(1)], dim=1)

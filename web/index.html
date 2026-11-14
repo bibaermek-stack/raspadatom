@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Спектр зертханасы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Спектр зертханасы</h1>
+    <span class="sub"><b>NIST ASD</b> сызықтары · <b id="nSpecies">29</b> түр · 1D-CNN + Attention браузерде жұмыс істейді</span>
+  </header>
+
+  <ol class="how" aria-label="Қалай жұмыс істейді">
+    <li><span><b>Түр таңдаңыз</b> немесе дайын мысалды басыңыз</span></li>
+    <li><span><b>Спектрдегі шыңды басыңыз</b>: сызық ауысуға сәйкес келеді</span></li>
+    <li><span><b>3D атом</b> электронның секіруін және фотонды көрсетеді</span></li>
+    <li><span><b>ЖИ</b> спектрге қарап құрамды өзі табады</span></li>
+  </ol>
+
+  <div class="mystery-banner" id="mysteryBanner" hidden></div>
+
+  <main class="layout">
+    <!-- ================= Үлгі ================= -->
+    <div class="col col-sample">
+      <section class="panel" aria-labelledby="h-sample">
+        <header>
+          <h2 id="h-sample">Үлгі</h2>
+          <span class="grow"></span>
+          <button class="btn small primary" id="btnMystery" type="button">Белгісіз қоспа</button>
+        </header>
+        <div class="body">
+          <span class="lbl hint" style="display:block;margin-bottom:8px">Дайын мысалдар</span>
+          <div class="presets" id="presets"></div>
+
+          <div class="sec">
+            <span class="lbl">Түрлер <span class="hint" id="selCount"></span></span>
+            <div class="species" id="speciesGrid"></div>
+            <div class="sel-list" id="selList"></div>
+          </div>
+
+          <div class="sec" id="paramBox">
+            <span class="lbl">Параметрлер</span>
+            <div class="ctl"><label for="inT">Плазма температурасы, T</label><output id="outT"></output>
+              <input id="inT" type="range" min="4000" max="15000" step="100"></div>
+            <div class="ctl"><label for="inFwhm">Құрылғы ажыратымдылығы (FWHM)</label><output id="outFwhm"></output>
+              <input id="inFwhm" type="range" min="0.6" max="3" step="0.05"></div>
+            <div class="ctl"><label for="inNoise">Шу деңгейі</label><output id="outNoise"></output>
+              <input id="inNoise" type="range" min="0" max="100" step="1"></div>
+            <div class="ctl" id="ctlTau"><label for="inTau">Оптикалық қалыңдық τ (жұтылу)</label><output id="outTau"></output>
+              <input id="inTau" type="range" min="0.2" max="6" step="0.1"></div>
+            <details style="margin-top:12px">
+              <summary>Қосымша</summary>
+              <div class="ctl"><label for="inEta">Сызық пішіні: Гаусс ↔ Лоренц</label><output id="outEta"></output>
+                <input id="inEta" type="range" min="0" max="1" step="0.05"></div>
+              <div class="ctl"><label for="inExp">Экспозиция (түс жолағы)</label><output id="outExp"></output>
+                <input id="inExp" type="range" min="0.3" max="4" step="0.1"></div>
+              <div class="ctl"><label for="inShift">Калибровка ығысуы</label><output id="outShift"></output>
+                <input id="inShift" type="range" min="-1" max="1" step="0.05"></div>
+            </details>
+            <div class="row" style="margin-top:12px">
+              <button class="btn small" id="btnNoise" type="button">Жаңа шу</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= Спектр ================= -->
+    <div class="col col-main">
+      <section class="panel" aria-labelledby="h-spec">
+        <header>
+          <h2 id="h-spec">Спектр</h2>
+          <div class="seg" id="modeSeg" role="group" aria-label="Режим">
+            <button type="button" data-mode="emission" aria-pressed="true">Сәулелену</button>
+            <button type="button" data-mode="absorption" aria-pressed="false">Жұтылу</button>
+          </div>
+          <span class="grow"></span>
+          <div class="seg" id="rangeSeg" role="group" aria-label="Аралық">
+            <button type="button" data-range="full" aria-pressed="true">200–900 нм</button>
+            <button type="button" data-range="vis" aria-pressed="false">Көрінетін</button>
+          </div>
+          <div class="seg" id="scaleSeg" role="group" aria-label="Шкала">
+            <button type="button" data-scale="lin" aria-pressed="true">Сызықтық</button>
+            <button type="button" data-scale="log" aria-pressed="false">Лог</button>
+          </div>
+        </header>
+        <div class="spec-wrap">
+          <canvas id="strip" aria-label="Спектрлік жолақ"></canvas>
+          <canvas id="graph" aria-label="Интенсивтілік графигі"></canvas>
+          <div class="readout" id="readout"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-lines">
+        <header>
+          <h2 id="h-lines">Сызықтар</h2>
+          <span class="hint grow" id="linesHint">Жолды таңдаңыз: 3D атом осы ауысуды көрсетеді</span>
+        </header>
+        <div class="table-wrap">
+          <table class="lines" id="linesTable">
+            <thead><tr><th>Түр</th><th>λ, нм</th><th>Ауысу</th><th>ΔE, эВ</th><th>I</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= 3D + деңгейлер ================= -->
+    <div class="col col-side">
+      <section class="panel" aria-labelledby="h-3d">
+        <header>
+          <h2 id="h-3d">3D</h2>
+          <div class="seg" id="sceneSeg" role="group" aria-label="Көрініс">
+            <button type="button" data-scene="atom" aria-pressed="true">Атом</button>
+            <button type="button" data-scene="bench" aria-pressed="false">Спектрометр</button>
+          </div>
+        </header>
+        <div id="transInfo"></div>
+        <div class="scene">
+          <canvas id="atomCanvas" aria-label="3D атом моделі"></canvas>
+          <canvas id="benchCanvas" aria-label="3D призмалық спектрометр" hidden></canvas>
+          <div class="caption" id="sceneCaption"></div>
+        </div>
+        <div class="scene-tools">
+          <button class="btn small" id="btnPlay" type="button">Тоқтату</button>
+          <button class="btn small" id="btnReplay" type="button">Қайта</button>
+          <label>Жылдамдық <input id="inSpeed" type="range" min="0.25" max="2" step="0.05" value="1"></label>
+          <label><input id="inRotate" type="checkbox" checked> Айналу</label>
+          <span class="hint grow" style="text-align:right">Тінтуірмен бұрыңыз, дөңгелекпен үлкейтіңіз</span>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-lev">
+        <header><h2 id="h-lev">Деңгейлер диаграммасы</h2><span class="hint grow" id="levHint"></span></header>
+        <canvas id="levels" aria-label="Энергия деңгейлері"></canvas>
+      </section>
+    </div>
+  </main>
+
+  <!-- ================= ЖИ ================= -->
+  <section class="panel" aria-labelledby="h-ai">
+    <header>
+      <h2 id="h-ai">ЖИ талдауы</h2>
+      <span class="hint" id="aiMeta"></span>
+    </header>
+    <div class="body" id="aiBody"></div>
+  </section>
+
+  <p class="footer" id="footer"></p>
+</div>
+
+<script src="data/lines.js"></script>
+<script src="data/model.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/engine3d.js"></script>
+<script src="js/atomscene.js"></script>
+<script src="js/benchscene.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
