@@ -59,8 +59,23 @@ def test_js_matches_python(tmp_path):
             logits, t = model(torch.from_numpy(spec)[None, None])
         ai.append(dict(spec=spec.tolist(), logits=logits[0].tolist(), t=float(t[0])))
 
+    cam = []
+    cam_ck = ROOT / "checkpoints" / "camera_net.pt"
+    if cam_ck.exists():
+        from spectra_ai.synth_cam import CameraSpectra
+        ck2 = torch.load(cam_ck, map_location="cpu", weights_only=False)
+        m2 = SpectralAttentionNet(len(ck2["species"]), n_points=ck2["n_points"], num_layers=ck2.get("num_layers", 2))
+        m2.load_state_dict(ck2["state_dict"])
+        m2.eval()
+        ds = CameraSpectra(db, 8, seed=5)
+        for i in range(6):
+            x = ds[i][0]
+            with torch.no_grad():
+                lg, _ = m2(x[None])
+            cam.append(dict(spec=x[0].tolist(), logits=lg[0].tolist()))
+
     f = tmp_path / "vectors.json"
-    f.write_text(json.dumps(dict(physics=physics, ai=ai)))
+    f.write_text(json.dumps(dict(physics=physics, ai=ai, cam=cam)))
     r = subprocess.run(["node", str(ROOT / "web" / "tests" / "verify.js"), str(f)], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     out = json.loads(r.stdout.strip().splitlines()[-1])

@@ -2,16 +2,26 @@
    node web/tests/smoke.js [index.html жолы]  -> соңғы жол JSON; қате болса шығу коды 1 */
 'use strict';
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const { chromium } = require('playwright');
 
 const file = process.argv[2] || path.join(__dirname, '..', 'index.html');
+// камера сынағы үшін: PNG мысал және жалған веб-камера бейнесі (Y4M)
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spectra-smoke-'));
+const { writePNG } = require('./png.js');
+const D = require('../data/lines.js'), PH = require('../js/physics.js'), CSIM = require('../js/camsim.js');
+const simImg = CSIM.render(CSIM.SOURCES.find(s => s.id === 'ne'), D.species, {}, PH.mulberry32(21)).img;
+const pngPath = path.join(tmp, 'ne.png'); writePNG(pngPath, simImg.data, simImg.width, simImg.height);
+const y4mPath = path.join(tmp, 'ne.y4m');
+require('child_process').execFileSync('node', [path.join(__dirname, 'make_y4m.js'), y4mPath, 'ne'], { stdio: 'ignore' });
 const fail = [];
 const check = (ok, msg) => { if (!ok) fail.push(msg); };
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--use-file-for-fake-video-capture=' + y4mPath] });
   for (const [name, vp] of [['desktop', { width: 1440, height: 1000 }], ['phone', { width: 390, height: 844 }]]) {
-    const page = await (await browser.newContext({ viewport: vp })).newPage();
+    const page = await (await browser.newContext({ viewport: vp, permissions: ['camera'] })).newPage();
     const errs = [];
     page.on('pageerror', e => errs.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_FAILED/.test(m.text())) errs.push(m.text()); });
@@ -50,6 +60,25 @@ const check = (ok, msg) => { if (!ok) fail.push(msg); };
     // барлық түр үшін өту тексеру: әр түрді таңдау қатесіз
     const names = await page.$$eval('#speciesGrid .sp', b => b.map(x => x.dataset.n));
     for (const n of names) { await page.click('.sp[data-n="' + n + '"]'); await page.waitForTimeout(20); }
+    // ---- камера бөлімі ----
+    await page.click('[data-view=cam]'); await page.waitForTimeout(500);
+    check(await page.locator('#camAiBody .bar').count() > 3, name + ': камера: ЖИ бағандары жоқ');
+    const camPainted = await page.evaluate(() => ['camCanvas', 'camGraph'].map(id => {
+      const c = document.getElementById(id), x = c.getContext('2d'); const d = x.getImageData(0, 0, c.width, c.height).data;
+      let n = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 40) n++;
+      return [id, n];
+    }));
+    camPainted.forEach(([id, n]) => check(n > 15, name + ': ' + id + ' бос (' + n + ')'));
+    await page.click('#camAutoCal'); await page.waitForTimeout(300);
+    check(/cfl/.test(await page.textContent('#camCalState')), name + ': CFL автокалибровкасы өтпеді: ' + await page.textContent('#camCalMsg'));
+    for (const i of [1, 2, 3, 8]) { await page.locator('#camSamples .chip').nth(i).click(); await page.waitForTimeout(250); }
+    check(await page.locator('#camAiBody .bar').count() > 3, name + ': камера: үлгілерден кейін ЖИ жоқ');
+    await page.setInputFiles('#camFile', pngPath); await page.waitForTimeout(500);
+    check(/ne\.png/.test(await page.textContent('#camStatus')), name + ': PNG жүктелмеді: ' + await page.textContent('#camStatus'));
+    await page.click('#camLive'); await page.waitForTimeout(2500);
+    check(/Тікелей камера/.test(await page.textContent('#camStatus')), name + ': тікелей камера іске қосылмады: ' + await page.textContent('#camStatus'));
+    await page.click('#camLive'); await page.waitForTimeout(200);
+    await page.click('[data-view=lab]'); await page.waitForTimeout(300);
     check(errs.length === 0, name + ': консоль қателері: ' + errs.slice(0, 3).join(' | '));
     await page.close();
   }

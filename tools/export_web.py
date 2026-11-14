@@ -70,10 +70,10 @@ def fold_bn(conv: torch.nn.Conv1d, bn: torch.nn.BatchNorm1d):
     return w.detach(), b.detach()
 
 
-def export_model(ckpt_path: Path, out: Path) -> list[str]:
+def export_model(ckpt_path: Path, out: Path, global_name: str = "SL_MODEL", extra: dict | None = None) -> list[str]:
     ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     species = ck["species"]
-    model = SpectralAttentionNet(len(species))
+    model = SpectralAttentionNet(len(species), n_points=ck.get("n_points", N_POINTS), num_layers=ck.get("num_layers", 2))
     model.load_state_dict(ck["state_dict"])
     model.eval()
     assert abs(model.conv[0][1].eps - BN_EPS) < 1e-12
@@ -102,14 +102,15 @@ def export_model(ckpt_path: Path, out: Path) -> list[str]:
         blobs.append(a.tobytes())
         offset += a.size
     meta = {
-        "species": species, "tRange": [T_MIN, T_MAX], "nPoints": N_POINTS,
-        "dModel": 64, "heads": 4, "layers": len(model.attention.layers),
+        "species": species, "tRange": [T_MIN, T_MAX], "nPoints": ck.get("n_points", N_POINTS),
+        "dModel": 64, "heads": 4, "layers": len(model.attention.layers), "domain": ck.get("domain", "full"),
         "ln_eps": 1e-5, "metrics": ck.get("metrics", {}),
         "tensors": manifest, "weights": base64.b64encode(b"".join(blobs)).decode("ascii"),
     }
+    meta.update(extra or {})
     js = ("/* Автоматты түрде жасалған: python tools/export_web.py. Модель салмақтары (float32, base64). */\n"
           "(function (root) {\n  var M = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";\n"
-          "  if (typeof module === 'object' && module.exports) module.exports = M; else root.SL_MODEL = M;\n"
+          "  if (typeof module === 'object' && module.exports) module.exports = M; else root." + global_name + " = M;\n"
           "})(typeof window !== 'undefined' ? window : globalThis);\n")
     out.write_text(js, encoding="utf-8")
     print(f"{out}: {out.stat().st_size/1024:.0f} КБ, {offset} параметр, метрика: {ck.get('metrics')}")
@@ -119,6 +120,7 @@ def export_model(ckpt_path: Path, out: Path) -> list[str]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", default=str(ROOT / "checkpoints" / "spectral_net.pt"))
+    ap.add_argument("--camera-checkpoint", default=str(ROOT / "checkpoints" / "camera_net.pt"))
     ap.add_argument("--csv", default=str(ROOT / "data" / "nist_lines.csv"))
     ap.add_argument("--out", default=str(ROOT / "web" / "data"))
     a = ap.parse_args()
@@ -126,6 +128,10 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     species = export_model(Path(a.checkpoint), out / "model.js")
     export_lines(Path(a.csv), out / "lines.js", species)
+    cam = Path(a.camera_checkpoint)
+    if cam.exists():
+        from spectra_ai.synth_cam import CAM_HI, CAM_LO
+        export_model(cam, out / "model_cam.js", "SL_MODEL_CAM", {"window": [CAM_LO, CAM_HI]})
 
 
 if __name__ == "__main__":

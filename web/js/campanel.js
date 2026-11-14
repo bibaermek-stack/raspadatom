@@ -1,0 +1,453 @@
+/* «Камера» бөлімінің интерфейсі: сурет (файл / фото / тікелей камера / виртуал камера) → жолақ → спектр → калибровка → ЖИ.
+   Есептеу — camera.js, виртуал сурет — camsim.js, модель — ai.js (камера домені, SL_MODEL_CAM). */
+(function () {
+  'use strict';
+  var SL = window.SL, D = window.SL_DATA, MC = window.SL_MODEL_CAM;
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function html(el, s) { el.innerHTML = s; }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  if (!MC || !SL || !SL.camera) {            // камера моделі жоқ жинақ: бөлімді жасырамыз
+    var vs = $('#viewSeg'); if (vs) vs.hidden = true;
+    return;
+  }
+  var P = SL.physics, AI = SL.ai, C = SL.camera, CS = SL.camsim;
+  var species = D.species, byName = {};
+  species.forEach(function (s) { byName[s.name] = s; });
+  var model = new AI.Model(MC);
+  var MARK = ['#f0b64a', '#4fd1ff', '#ff7ab6'];
+  var MAXW = 1280;                           // жүктелген суретті осы ендікке дейін кішірейтеміз
+
+  var cs = {
+    img: null, roi: null, base: null, lock: false, prof: null, dir: { flip: false, conf: 0 },
+    cal: null, anchors: [{ x: null, wl: null }, { x: null, wl: null }], pick: 0, hover: null, flipUser: null,
+    ai: null, ver: null, fwhm: 4, live: null, frozen: false, label: '',
+    sim: { seed: 1, geo: null, src: null }, lastAI: 0, aiTimer: 0
+  };
+
+  // ================= көрініс ауыстыру =================
+  function setView(v) {
+    var cam = v === 'cam';
+    $('#viewLab').hidden = cam; $('#viewCam').hidden = !cam;
+    $$('#viewSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === v ? 'true' : 'false'); });
+    try { if (location.hash !== (cam ? '#camera' : '#lab')) history.replaceState(null, '', cam ? '#camera' : '#lab'); } catch (e) { /* ішкі қорғалған орта */ }
+    if (!cam) stopLive();
+    window.dispatchEvent(new Event('resize'));
+    if (cam) { drawAll(); if (!cs.img) loadSample(0); }
+  }
+
+  // ================= көмекші =================
+  function fit(cv) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return null;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+  function msg(id, text, cls) { var el = $(id); el.textContent = text; el.className = 'hint' + (cls ? ' ' + cls : ''); }
+
+  function effectiveRoi() {
+    if (!cs.roi) return null;
+    var r = cs.roi, b = cs.base, a = +$('#camAngle').value, th = +$('#camThick').value, s0 = +$('#camStart').value, s1 = +$('#camEnd').value;
+    return { cx: r.cx, cy: r.cy, theta: a * Math.PI / 180, hv: th, t0: b.tA + (b.tB - b.tA) * s0 / 100, t1: b.tA + (b.tB - b.tA) * Math.max(s1, s0 + 2) / 100 };
+  }
+  function setRoiControls(r) {
+    cs.base = { tA: r.t0, tB: r.t1 };
+    $('#camAngle').value = (r.theta * 180 / Math.PI).toFixed(1); $('#camThick').value = clamp(Math.round(r.hv), 3, 120);
+    $('#camStart').value = 0; $('#camEnd').value = 100;
+    roiLabels();
+  }
+  function roiLabels() {
+    $('#camAngleO').textContent = (+$('#camAngle').value).toFixed(1) + '°'; $('#camThickO').textContent = $('#camThick').value + ' px';
+    $('#camStartO').textContent = $('#camStart').value + '%'; $('#camEndO').textContent = $('#camEnd').value + '%';
+  }
+
+  // ================= кескінді жүктеу =================
+  function setImage(img, label, keepRoi) {
+    cs.img = img; cs.label = label || '';
+    if (!keepRoi) cs.flipUser = null;
+    var cv = $('#camCanvas'); cv.width = img.width; cv.height = img.height;
+    if (!keepRoi || !cs.roi || !cs.lock) {
+      var roi = C.detectBand(img);
+      cs.roi = roi;
+      if (roi) setRoiControls(roi);
+    }
+    reprocess(true);
+  }
+  function toImageData(source, w, h) {
+    var k = Math.min(1, MAXW / w), cw = Math.round(w * k), ch = Math.round(h * k), c = document.createElement('canvas');
+    c.width = cw; c.height = ch;
+    var x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(source, 0, 0, cw, ch);
+    var id = x.getImageData(0, 0, cw, ch);
+    return { data: id.data, width: cw, height: ch };
+  }
+  function loadFile(file) {
+    if (!file) return;
+    stopLive();
+    var done = function (src, w, h) { cs.lock = false; $('#camLock').checked = false; cs.cal = null; setImage(toImageData(src, w, h), file.name); updateStatus('Файл: ' + file.name); };
+    if (window.createImageBitmap) {
+      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bm) { done(bm, bm.width, bm.height); })
+        .catch(function () { viaImg(); });
+    } else viaImg();
+    function viaImg() {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function () { done(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); };
+      im.onerror = function () { updateStatus('Суретті оқи алмадым: JPG/PNG таңдаңыз'); URL.revokeObjectURL(url); };
+      im.src = url;
+    }
+  }
+
+  // ================= виртуал камера =================
+  var SAMPLE_ORDER = ['cfl', 'ne', 'na', 'h', 'he', 'hg', 'kr', 'mix', 'bulb', 'led'];
+  function sources() { return SAMPLE_ORDER.map(function (id) { return CS.SOURCES.filter(function (s) { return s.id === id; })[0]; }); }
+  function buildSamples() {
+    var out = '';
+    sources().forEach(function (s, i) { out += '<button type="button" class="chip" data-i="' + i + '">' + s.title + '</button>'; });
+    html($('#camSamples'), out);
+  }
+  // бір қондырғы: геометрия бекітіледі (калибровка басқа көздерге де жарамды); әр түсіруде шу мен экспозиция өзгереді
+  function loadSample(i, newSetup) {
+    stopLive();
+    var src = sources()[i], rng = P.mulberry32(cs.sim.seed * 1000 + i * 17 + (cs.sim.shot = (cs.sim.shot || 0) + 1));
+    if (newSetup || !cs.sim.geo) {
+      cs.sim.seed = (cs.sim.seed || 1) + (newSetup ? 7 : 0);
+      var g0 = CS.render(sources()[0], species, {}, P.mulberry32(cs.sim.seed * 7919)).geo;
+      cs.sim.geo = { theta: g0.theta * 180 / Math.PI, Lb: g0.Lb, cx: g0.cx, cy: g0.cy, sigv: g0.sigv, lamLo: g0.lamLo, lamHi: g0.lamHi, flip: g0.flip, fwhm: g0.fwhm, curv: g0.curv, cutR: g0.cutR, blobR: g0.blobR, blobOff: g0.blobOff };
+      cs.cal = null; cs.lock = false; cs.roi = null; $('#camLock').checked = false;
+    }
+    var o = cs.sim.geo, r = CS.render(src, species, { theta: o.theta, Lb: o.Lb, fixCx: o.cx, fixCy: o.cy, sigv: o.sigv, lamLo: o.lamLo, lamHi: o.lamHi, flip: o.flip, fwhm: o.fwhm, curv: o.curv, cutR: o.cutR, blobR: o.blobR, blobOff: o.blobOff }, rng);
+    cs.sim.src = i;
+    $$('#camSamples .chip').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.i === i ? 'true' : 'false'); });
+    setImage(r.img, src.title, true);
+    $('#camTruth').textContent = 'Виртуал: ' + src.title + (r.truth.length ? ' (құрамы: ' + r.truth.join(' + ') + ')' : ' (атомдық түр жоқ)');
+    updateStatus('Виртуал камера: ' + src.title);
+  }
+
+  // ================= тікелей камера =================
+  function stopLive() {
+    if (!cs.live) return;
+    cs.live.stop = true;
+    try { cs.live.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* ештеңе */ }
+    cs.live = null; $('#camLive').textContent = 'Камераны қосу'; $('#camFreeze').hidden = true;
+  }
+  function startLive() {
+    if (cs.live) { stopLive(); updateStatus('Камера тоқтатылды'); return; }
+    var md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia) { updateStatus('Бұл браузерде камера API жоқ: суретті жүктеңіз'); return; }
+    md.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).then(function (stream) {
+      var v = $('#camVideo'); v.srcObject = stream; v.setAttribute('playsinline', ''); v.muted = true;
+      return v.play().then(function () {
+        cs.live = { stream: stream, stop: false, n: 0, last: 0 }; cs.frozen = false; cs.lock = false; $('#camLock').checked = false;
+        $('#camLive').textContent = 'Камераны өшіру'; $('#camFreeze').hidden = false; $('#camFreeze').textContent = 'Қатыру';
+        updateStatus('Тікелей камера: калибровка үшін алдымен флуоресцентті шамды түсіріңіз');
+        requestAnimationFrame(liveLoop);
+      });
+    }).catch(function (e) {
+      updateStatus('Камераға рұқсат жоқ (' + (e && e.name || 'қате') + '). Қорғалған орта (мыс. Artifact) камераны өшіреді: «Фото түсіру» немесе «Сурет таңдау» қолданыңыз, не бетті файл ретінде жергілікті ашыңыз.');
+    });
+  }
+  function liveLoop(now) {
+    var L = cs.live; if (!L || L.stop) return;
+    if (!cs.frozen && now - L.last > 90) {
+      L.last = now;
+      var v = $('#camVideo');
+      if (v.videoWidth) {
+        var img = toImageData(v, v.videoWidth, v.videoHeight);
+        cs.img = img; var cv = $('#camCanvas'); if (cv.width !== img.width) { cv.width = img.width; cv.height = img.height; }
+        if (!cs.lock && (L.n % 20 === 0 || !cs.roi)) { var roi = C.detectBand(img); if (roi) { cs.roi = roi; setRoiControls(roi); } }
+        L.n++;
+        reprocess(false, true);
+      }
+    }
+    requestAnimationFrame(liveLoop);
+  }
+
+  // ================= өңдеу =================
+  function defaultCal(prof) {
+    var M = prof.M, flip = cs.flipUser !== null ? cs.flipUser : cs.dir.flip;
+    // 400–700 нм деп шамалаймыз: көк → қызыл (flip болса, керісінше)
+    return flip ? { a: -300 / (M - 1), b: 700, provisional: true } : { a: 300 / (M - 1), b: 400, provisional: true };
+  }
+  function currentCal() { return cs.cal || (cs.prof ? defaultCal(cs.prof) : null); }
+
+  function reprocess(full, live) {
+    if (!cs.img) return;
+    var r = effectiveRoi();
+    if (!r) { cs.prof = null; cs.ai = null; cs.ver = null; drawAll(); renderAI(); updateStatus('Спектр жолағы табылмады: суретті жарығырақ етіп, не ROI-ны қолмен баптаңыз'); return; }
+    var prof = C.extractProfile(cs.img, r);
+    cs.dir = C.colorDirection(prof);
+    if (cs.flipUser === null) $('#camFlip').checked = cs.dir.flip;      // автоматты бағыт; қолмен өзгертсе — ол басым
+    if (live && cs.prof && cs.prof.M === prof.M) for (var i = 0; i < prof.M; i++) prof.p[i] = 0.35 * prof.p[i] + 0.65 * cs.prof.p[i];     // уақыт бойынша тегістеу
+    cs.prof = prof;
+    drawImage(); drawGraph();
+    scheduleAI(full ? 0 : 280);
+  }
+
+  function scheduleAI(delay) {
+    clearTimeout(cs.aiTimer);
+    cs.aiTimer = setTimeout(analyze, delay);
+  }
+
+  function analyze() {
+    if (!cs.prof) return;
+    var cal = currentCal(), t0 = performance.now(), a = C.assess(cs.prof, cal, model, byName, species);
+    if (!a) { cs.ai = null; cs.ver = null; renderAI(); return; }
+    a.cal = cal; a.ms = performance.now() - t0;
+    cs.fwhm = a.fwhm; cs.ver = a.ver; cs.ai = a;
+    renderAI(); drawGraph();
+  }
+
+  // ================= сурет + ROI =================
+  function drawImage() {
+    var cv = $('#camCanvas');
+    if (!cs.img) return;
+    var ctx = cv.getContext('2d'), img = cs.img;
+    if (cv.width !== img.width || cv.height !== img.height) { cv.width = img.width; cv.height = img.height; }
+    ctx.putImageData(new ImageData(img.data instanceof Uint8ClampedArray ? img.data : new Uint8ClampedArray(img.data), img.width, img.height), 0, 0);
+    var r = effectiveRoi(); if (!r) return;
+    var ct = Math.cos(r.theta), st = Math.sin(r.theta), hv = r.hv;
+    function pt(t, s) { return [r.cx + t * ct - s * st, r.cy + t * st + s * ct]; }
+    var c = [pt(r.t0, -hv), pt(r.t1, -hv), pt(r.t1, hv), pt(r.t0, hv)], lw = Math.max(1.5, img.width / 500);
+    ctx.lineWidth = lw; ctx.strokeStyle = cs.lock ? '#78cdff' : '#f0b64a';
+    ctx.beginPath(); ctx.moveTo(c[0][0], c[0][1]); for (var i = 1; i < 4; i++) ctx.lineTo(c[i][0], c[i][1]); ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([lw * 4, lw * 3]); ctx.beginPath(); var a = pt(r.t0, 0), b = pt(r.t1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
+    var cal = currentCal(), fs = Math.max(12, img.width / 55);
+    ctx.font = '600 ' + fs + 'px Inter, system-ui, sans-serif'; ctx.fillStyle = ctx.strokeStyle; ctx.textBaseline = 'bottom';
+    if (cal && cs.prof) {
+      var M = cs.prof.M, l0 = cal.b, l1 = cal.a * (M - 1) + cal.b;
+      ctx.textAlign = 'left'; ctx.fillText(Math.round(l0) + ' нм' + (cal.provisional ? '?' : ''), c[0][0] + 3, c[0][1] - 3);
+      ctx.textAlign = 'right'; ctx.fillText(Math.round(l1) + ' нм' + (cal.provisional ? '?' : ''), c[1][0] - 3, c[1][1] - 3);
+    }
+  }
+
+  // ================= график =================
+  var ML = 40, MR = 10, MT = 12, MB = 26;
+  function drawGraph() {
+    var cv = $('#camGraph'), f = fit(cv); if (!f) return;
+    var ctx = f.ctx, W = f.w, H = f.h, pw = W - ML - MR, ph = H - MT - MB, bot = MT + ph;
+    var th = { bg: css('--graph-bg'), grid: css('--graph-grid'), axis: css('--graph-axis'), curve: css('--graph-curve'), accent: css('--accent'), fg: css('--fg') };
+    ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
+    if (!cs.prof) { ctx.fillStyle = th.axis; ctx.font = '13px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Спектр жоқ', W / 2, H / 2); return; }
+    var cal = currentCal(), M = cs.prof.M, p = C.gauss(cs.prof.p, 0.8), mx = 1e-9, i;
+    for (i = 0; i < M; i++) if (p[i] > mx) mx = p[i];
+    var la = cal.b, lb = cal.a * (M - 1) + cal.b, lo = Math.min(la, lb), hi = Math.max(la, lb);
+    function X(l) { return ML + (l - lo) / (hi - lo) * pw; }
+    function Y(v) { return bot - clamp(v / mx, 0, 1.05) / 1.05 * ph; }
+    ctx.font = '11px "JetBrains Mono", ui-monospace, monospace'; ctx.lineWidth = 1;
+    var span = hi - lo, xs = span > 500 ? 100 : span > 250 ? 50 : 20;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var w = Math.ceil(lo / xs) * xs; w <= hi; w += xs) { ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(X(w), MT); ctx.lineTo(X(w), bot); ctx.stroke(); ctx.fillStyle = th.axis; ctx.fillText(String(w), X(w), bot + 8); }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    [0, 0.5, 1].forEach(function (t) { ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t * mx)); ctx.lineTo(W - MR, Y(t * mx)); ctx.stroke(); ctx.fillStyle = th.axis; ctx.fillText(t.toFixed(1), ML - 6, Y(t * mx)); });
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillStyle = cal.provisional ? th.accent : th.axis;
+    ctx.fillText(cal.provisional ? 'λ, нм (калибровка жоқ: шамамен)' : 'λ, нм', W - MR, H - 1);
+    // 380–780 терезесі
+    [380, 780].forEach(function (e) { if (e > lo && e < hi) { ctx.setLineDash([4, 4]); ctx.strokeStyle = th.axis; ctx.beginPath(); ctx.moveTo(X(e), MT); ctx.lineTo(X(e), bot); ctx.stroke(); ctx.setLineDash([]); } });
+    // профиль: түсті бояу + қисық
+    var dark = th.bg !== '#fbfcfe';
+    for (i = 0; i < M - 1; i++) {
+      var l = cal.a * i + cal.b, x0 = X(l), x1 = X(cal.a * (i + 1) + cal.b), yv = Y(p[i]);
+      ctx.fillStyle = P.rgbCss(P.wlColor(l), dark ? 0.26 : 0.38);
+      ctx.fillRect(Math.min(x0, x1), yv, Math.max(1, Math.abs(x1 - x0) + 0.5), bot - yv);
+    }
+    ctx.beginPath();
+    for (i = 0; i < M; i++) { var xx = X(cal.a * i + cal.b), yy = Y(p[i]); if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy); }
+    ctx.strokeStyle = th.curve; ctx.lineWidth = 1.3; ctx.stroke();
+    // модельденген қисық (ЖИ болжамы бойынша)
+    if (cs.ver && cs.ai && cs.ver.simulated && cs.ai.predGated.length) {
+      var sim = cs.ver.simulated, x = cs.ai.inp.x, num = 0, den = 1e-9;
+      for (i = 0; i < sim.length; i++) { num += x[i] * sim[i]; den += sim[i] * sim[i]; }
+      var sc = num / den;
+      ctx.beginPath(); var started = false;
+      for (i = 0; i < sim.length; i++) {
+        var lam = C.WIN_LO + i * C.WIN_DX; if (lam < lo || lam > hi) continue;
+        var px = X(lam), py = Y(sim[i] * sc * mx);
+        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      }
+      ctx.setLineDash([5, 3]); ctx.strokeStyle = th.accent; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    }
+    // болжанған түрлердің сызықтары: төменгі штрихтар (табылғаны — қою, табылмағаны — жарты)
+    if (cs.ver) cs.ver.perSpecies.forEach(function (ps, k) {
+      ps.expected.forEach(function (e) {
+        var xe = X(e.wl); if (xe < ML || xe > W - MR) return;
+        ctx.strokeStyle = MARK[k % 3]; ctx.globalAlpha = e.found ? 1 : 0.35; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(xe, bot); ctx.lineTo(xe, bot - 8 - 14 * e.st); ctx.stroke(); ctx.globalAlpha = 1;
+      });
+    });
+    // шыңдардың атаулары
+    var peaks = C.findPeaks(p, 0.14 * mx, Math.max(4, M / 60)).slice(0, 6);
+    ctx.font = '600 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = th.fg;
+    var placed = [];
+    peaks.forEach(function (pk) {
+      var l = cal.a * pk.x + cal.b, x = X(l); if (x < ML + 16 || x > W - MR - 16) return;
+      if (placed.some(function (q) { return Math.abs(q - x) < 40; })) return; placed.push(x);
+      ctx.fillText(l.toFixed(0), x, Math.max(MT + 12, Y(pk.h) - 4));
+    });
+    // калибровка нүктелері
+    cs.anchors.forEach(function (a, k) {
+      if (a.x == null) return;
+      var xa = X(cal.a * a.x + cal.b); ctx.setLineDash([2, 3]); ctx.strokeStyle = MARK[k]; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(xa, MT); ctx.lineTo(xa, bot); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = MARK[k]; ctx.textBaseline = 'top'; ctx.fillText(String(k + 1), xa, MT + 1);
+    });
+    if (cs.hover != null) { var hx = X(cs.hover); if (hx >= ML && hx <= W - MR) { ctx.strokeStyle = th.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx, MT); ctx.lineTo(hx, bot); ctx.stroke(); ctx.globalAlpha = 1; } }
+    cs._plot = { lo: lo, hi: hi, W: W, cal: cal, M: M };
+  }
+  function drawAll() { drawImage(); drawGraph(); }
+
+  // ================= ЖИ панелі =================
+  function sname(n) { var s = byName[n]; return s ? s.sym + ' ' + (s.charge ? 'II' : 'I') : n; }
+  function renderAI() {
+    var box = $('#camAiBody'), a = cs.ai;
+    if (!cs.img) { html(box, '<p class="cam-hint">Сурет таңдаңыз.</p>'); return; }
+    if (!cs.prof) { html(box, '<p class="cam-hint">Спектр жолағы табылмады.</p>'); return; }
+    if (!a) { html(box, '<p class="cam-hint">Сигнал жеткіліксіз: калибровка аралығы 380–780 нм-мен қиылыспайды не профиль тегіс.</p>'); return; }
+    var res = a.res, names = model.species, order = names.map(function (n, k) { return k; }).sort(function (x, y) { return res.probs[y] - res.probs[x]; });
+    var show = order.slice(0, 6), bars = '';
+    show.forEach(function (k) {
+      var p = res.probs[k], isP = p > 0.5;
+      bars += '<div class="bar' + (isP ? ' pred' : '') + '" style="grid-template-columns:52px 1fr 44px"><span class="num">' + sname(names[k]) + '</span><span class="track"><span class="fill" style="display:block;width:' + (p * 100).toFixed(1) + '%"></span></span><span class="pc">' + Math.round(p * 100) + '%</span></div>';
+    });
+    var pills = '', verdict, conf = a.confirmed, pg = a.predGated;
+    if (a.cal.provisional) pills += '<span class="pill warn">калибровка жоқ: сенімсіз</span> ';
+    else pills += '<span class="pill ok">калибровка: ' + (a.cal.kind === 'cfl' ? 'CFL' : '2 нүкте') + (a.cal.rms ? ', RMS ' + a.cal.rms.toFixed(1) + ' нм' : '') + '</span> ';
+    pills += '<span class="pill">ажыратымдылық ≈ ' + cs.fwhm.toFixed(1) + ' нм</span> <span class="pill' + (a.continuum ? ' warn' : '') + '">сызықтылық ' + a.lin.toFixed(2) + '</span>';
+    if (pg.length) verdict = 'ЖИ анықтады: ' + pg.map(function (k) {
+      var ok = conf.indexOf(names[k]) >= 0;
+      return '<b>' + sname(names[k]) + ' (' + Math.round(res.probs[k] * 100) + '%)</b>' + (ok ? ' <span class="pill ok">расталды</span>' : ' <span class="pill warn">расталмады</span>');
+    }).join(', ') + '.';
+    else if (a.continuum) verdict = 'Атомдық сызықтар <b>табылмады</b>: үздіксіз спектр (қыздыру шамы, LED, күн) не сигнал әлсіз. Тар шыңдар: ' + a.narrow.length + '.' +
+      (a.pred.length ? ' Модельдің шикі болжамы (' + a.pred.map(function (k) { return sname(names[k]); }).join(', ') + ') тар шыңдар болмағандықтан қабылданбады.' : '');
+    else verdict = 'Сенімді түр жоқ: ешбір түрдің ықтималдығы 50%-дан аспайды.';
+    var warn = '';
+    var satN = 0, top = 0, M = cs.prof.M, thr = 0, i;
+    for (i = 0; i < M; i++) thr = Math.max(thr, cs.prof.p[i]);
+    for (i = 0; i < M; i++) if (cs.prof.p[i] > 0.6 * thr) { top++; if (cs.prof.sat[i] > 0.4) satN++; }
+    if (top && satN / top > 0.3) warn += '<li>Сигнал қаныққан: ең жарық сызықтар жалпақталған. Экспозицияны азайтыңыз.</li>';
+    var d = [], mdn;
+    for (i = 1; i < M; i++) d.push(Math.abs(cs.prof.p[i] - cs.prof.p[i - 1]));
+    d.sort(function (x, y) { return x - y; }); mdn = d[d.length >> 1] * 1.4826 / 1.414;
+    if (thr / Math.max(mdn, 1e-9) < 12) warn += '<li>Сигнал шумен салыстырғанда әлсіз: көз қараңғы бөлмеде не жарығырақ болсын.</li>';
+    if (a.inp.coverage < 0.5) warn += '<li>Калибровка 380–780 нм-нің жартысынан азын қамтиды: нәтиже толық емес.</li>';
+    if (cs.roi && cs.roi.info && cs.roi.info.single && !cs.lock) warn += '<li>Бір ғана сызық көрінеді: жолақ бағытын «Бұрыш» жүгірткісімен тексеріңіз.</li>';
+    var ver = '', v = cs.ver;
+    if (v) {
+      v.perSpecies.forEach(function (ps) {
+        var n = ps.expected.length, ok = ps.found, fr = n ? ok / n : 0, cls = fr >= 0.6 ? 'ok' : fr >= 0.35 ? 'warn' : 'bad';
+        ver += '<li><span class="pill ' + cls + '">' + ok + ' / ' + n + '</span> <b>' + sname(ps.name) + '</b>: болжамның негізгі сызықтарының ' + Math.round(fr * 100) + '% спектрде бар</li>';
+      });
+      (a.continuum ? [] : v.unexplained).slice(0, 4).forEach(function (u) {
+        var what = u.phosphor ? u.phosphor : (u.cand.length ? 'жақын: ' + u.cand.map(function (c) { return sname(c.name) + ' ' + c.wl.toFixed(1); }).join(', ') : 'белгісіз');
+        ver += '<li><span class="pill">?</span> түсіндірілмеген шың <b>' + u.wl.toFixed(1) + ' нм</b> (' + what + ')</li>';
+      });
+      if (pg.length && !conf.length) warn += '<li class="bad">ЖИ болжамы сызықтармен расталмады: калибровканы тексеріңіз.</li>';
+    }
+    html(box, '<div>' + pills + '</div><div class="bars" style="margin-top:12px;grid-template-columns:1fr">' + bars + '</div><p class="verdict" style="margin:12px 0 0">' + verdict + '</p>' +
+      (warn ? '<ul class="warns">' + warn + '</ul>' : '') + (ver ? '<ul class="verify">' + ver + '</ul>' : '') +
+      '<p class="note">Модель көрінетін аймақта (380–780 нм) камера бұрмалаулары қосылған синтетикалық спектрлерде оқытылған (F1 ' + (MC.metrics && MC.metrics.f1 ? MC.metrics.f1.toFixed(2) : '?') + '), нақты камерада тексерілмеген. Штрихтар графикте болжам сызықтарын көрсетеді: қою — спектрде бар, жарты — жоқ. Есептеу: ' + a.ms.toFixed(0) + ' мс.</p>');
+  }
+
+  function updateStatus(t) { $('#camStatus').textContent = t; }
+  function calState() {
+    var c = cs.cal, el = $('#camCalState');
+    el.textContent = c ? 'Калибровка: ' + c.kind + (c.rms ? ', RMS ' + c.rms.toFixed(1) + ' нм' : '') + ', ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель' : 'Калибровка жоқ';
+  }
+
+  // ================= калибровка =================
+  function lockRoi(on) { cs.lock = on; $('#camLock').checked = on; drawImage(); }
+  function doAutoCal() {
+    if (!cs.prof) { msg('#camCalMsg', 'Алдымен сурет таңдаңыз.'); return; }
+    var c = C.autoCalibrateCFL(cs.prof);
+    if (!c) { msg('#camCalMsg', 'Флуоресцентті шам сызықтары табылмады. Кадрда флуоресцентті/CFL шамның спектрі көрінетініне көз жеткізіңіз, не қолмен калибровка жасаңыз.', 'bad'); return; }
+    cs.cal = c; lockRoi(true);
+    msg('#camCalMsg', 'Калибровка дайын: ' + c.matched.map(function (m) { return m.name; }).join(', ') + '; RMS ' + c.rms.toFixed(1) + ' нм. ROI бекітілді: енді басқа көздерді түсіріңіз.');
+    calState(); reprocess(true);
+  }
+  function doManualCal() {
+    var a = cs.anchors, w1 = parseFloat($('#camWl1').value), w2 = parseFloat($('#camWl2').value);
+    if (a[0].x == null || a[1].x == null || !isFinite(w1) || !isFinite(w2)) { msg('#camPickMsg', 'Екі нүктені графиктен таңдап, екі толқын ұзындығын енгізіңіз.', 'bad'); return; }
+    var c = C.calib2(a[0].x, w1, a[1].x, w2);
+    if (!c) { msg('#camPickMsg', 'Нүктелер немесе толқын ұзындықтары бірдей.', 'bad'); return; }
+    cs.cal = c; lockRoi(true); msg('#camPickMsg', 'Калибровка қолданылды: ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель.'); calState(); reprocess(true);
+  }
+
+  // ================= әрекеттерді байлау =================
+  function bind() {
+    $('#viewSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setView(b.dataset.view); });
+    window.addEventListener('hashchange', function () { var v = location.hash === '#camera' ? 'cam' : 'lab'; if (($('#viewCam').hidden) === (v === 'cam')) setView(v); });
+    $('#camSamples').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (b) loadSample(+b.dataset.i); });
+    $('#camReshoot').addEventListener('click', function () { loadSample(cs.sim.src == null ? 0 : cs.sim.src, true); });
+    $('#camPickFile').addEventListener('click', function () { $('#camFile').click(); });
+    $('#camPickShot').addEventListener('click', function () { $('#camShot').click(); });
+    $('#camFile').addEventListener('change', function (e) { loadFile(e.target.files[0]); e.target.value = ''; });
+    $('#camShot').addEventListener('change', function (e) { loadFile(e.target.files[0]); e.target.value = ''; });
+    $('#camLive').addEventListener('click', startLive);
+    $('#camFreeze').addEventListener('click', function () { cs.frozen = !cs.frozen; this.textContent = cs.frozen ? 'Жалғастыру' : 'Қатыру'; });
+    ['camAngle', 'camThick', 'camStart', 'camEnd'].forEach(function (id) {
+      $('#' + id).addEventListener('input', function () { lockRoi(true); roiLabels(); reprocess(true); });
+    });
+    $('#camAuto').addEventListener('click', function () { if (!cs.img) return; lockRoi(false); cs.cal = null; calState(); var roi = C.detectBand(cs.img); cs.roi = roi; if (roi) setRoiControls(roi); reprocess(true); });
+    $('#camLock').addEventListener('change', function () { cs.lock = this.checked; drawImage(); });
+    $('#camFlip').addEventListener('change', function () { cs.flipUser = this.checked; reprocess(true); });
+    $('#camAutoCal').addEventListener('click', doAutoCal);
+    $('#camClearCal').addEventListener('click', function () { cs.cal = null; cs.anchors = [{ x: null, wl: null }, { x: null, wl: null }]; msg('#camCalMsg', ''); calState(); reprocess(true); });
+    $('#camPick1').addEventListener('click', function () { cs.pick = 1; msg('#camPickMsg', 'Графиктен 1-сызықты басыңыз.'); });
+    $('#camPick2').addEventListener('click', function () { cs.pick = 2; msg('#camPickMsg', 'Графиктен 2-сызықты басыңыз.'); });
+    $('#camApplyCal').addEventListener('click', doManualCal);
+    $$('[data-laser]').forEach(function (b) { b.addEventListener('click', function () { var i1 = $('#camWl1'), i2 = $('#camWl2'); (i1.value === '' ? i1 : i2).value = b.dataset.laser; }); });
+
+    var g = $('#camGraph');
+    function lamFrom(e) {
+      if (!cs._plot) return null;
+      var r = g.getBoundingClientRect(), x = e.clientX - r.left, f = (x - ML) / (r.width - ML - MR);
+      return f < 0 || f > 1 ? null : cs._plot.lo + f * (cs._plot.hi - cs._plot.lo);
+    }
+    g.addEventListener('pointermove', function (e) {
+      var l = lamFrom(e); cs.hover = l;
+      var ro = $('#camReadout');
+      if (l == null || !cs.prof) { ro.innerHTML = ''; drawGraph(); return; }
+      var cal = cs._plot.cal, idx = (l - cal.b) / cal.a, i0 = clamp(Math.round(idx), 0, cs.prof.M - 1);
+      var near = [];
+      species.forEach(function (sp) { var j = P.nearestLine(sp, l); if (Math.abs(sp.wl[j] - l) <= Math.max(2.5, cs.fwhm * 0.8)) near.push({ sp: sp, wl: sp.wl[j], rel: Math.log10(sp.rel[j] + 1) }); });
+      near.sort(function (a, b) { return b.rel - a.rel; });
+      ro.innerHTML = '<span>λ = <b class="num">' + l.toFixed(1) + ' нм</b></span><span>пиксель = <b class="num">' + i0 + '</b></span>' + (near.length ? '<span>Жақын: ' + near.slice(0, 4).map(function (q) { return '<b>' + sname(q.sp.name) + ' ' + q.wl.toFixed(1) + '</b>'; }).join(', ') + '</span>' : '');
+      drawGraph();
+    });
+    g.addEventListener('pointerleave', function () { cs.hover = null; $('#camReadout').innerHTML = ''; drawGraph(); });
+    g.addEventListener('click', function (e) {
+      if (!cs.pick || !cs.prof) return;
+      var l = lamFrom(e); if (l == null) return;
+      var cal = cs._plot.cal, idx = (l - cal.b) / cal.a, y = C.gauss(cs.prof.p, 1), best = clamp(Math.round(idx), 0, cs.prof.M - 1), bv = -1;
+      for (var j = Math.max(0, best - 10); j <= Math.min(cs.prof.M - 1, best + 10); j++) if (y[j] > bv) { bv = y[j]; best = j; }   // жақын шыңға жабысу
+      cs.anchors[cs.pick - 1].x = best;
+      msg('#camPickMsg', cs.pick + '-нүкте: пиксель ' + best + '. Оның нақты толқын ұзындығын енгізіңіз.');
+      cs.pick = 0; drawGraph();
+    });
+
+    // сүйреп апару және буфер (Ctrl+V)
+    var stage = $('.cam-stage');
+    ['dragover', 'dragenter'].forEach(function (ev) { stage.addEventListener(ev, function (e) { e.preventDefault(); }); });
+    stage.addEventListener('drop', function (e) { e.preventDefault(); var f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
+    document.addEventListener('paste', function (e) {
+      if ($('#viewCam').hidden) return;
+      var it = Array.prototype.filter.call((e.clipboardData && e.clipboardData.items) || [], function (x) { return x.type.indexOf('image') === 0; })[0];
+      if (it) loadFile(it.getAsFile());
+    });
+    window.addEventListener('resize', function () { if (!$('#viewCam').hidden) drawGraph(); });
+    var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', drawGraph);
+    new MutationObserver(drawGraph).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+
+  function init() {
+    buildSamples(); bind(); roiLabels(); calState();
+    $('#camAiMeta').textContent = '1D-CNN + Transformer · камера домені (380–780 нм)';
+    $('#camFooter').innerHTML = 'Кескіннен спектр: жолақ PCA арқылы табылады, бұрышы мен қисықтығы ескеріліп профиль алынады (sRGB → сызықтық, фон алынады), калибровка λ = a·пиксель + b. ' +
+      'Көрінетін аймақтағы (380–780 нм) 1024 нүктелі спектр камера моделіне беріледі; ол ажыратымдылық 1.5–12 нм, калибровка қателігі, сезімталдық қисығы, қанығу, фон, бөгде (фосфор) сызықтар қосылған синтетикалық спектрлерде оқытылған. ' +
+      'Виртуал камера — модель, нақты фото емес. Нақты камерада сапа тексерілмеген: нәтижені графиктегі сызық сәйкестігімен салыстырыңыз.';
+    if (location.hash === '#camera') setView('cam');
+  }
+  init();
+})();

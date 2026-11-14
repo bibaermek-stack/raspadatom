@@ -4,3 +4,4 @@ __pycache__/
 node_modules/
 checkpoints/*
 !checkpoints/spectral_net.pt
+!checkpoints/camera_net.pt

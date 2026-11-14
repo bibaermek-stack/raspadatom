@@ -24,16 +24,16 @@ def conv_block(cin, cout, k):
 
 
 class SpectralAttentionNet(nn.Module):
-    def __init__(self, num_species: int, n_points: int = 2048, d_model: int = 64):
+    def __init__(self, num_species: int, n_points: int = 2048, d_model: int = 64, num_layers: int = 2):
         super().__init__()
-        # 2048 -> 512 -> 128 токен
+        # n_points -> n/4 -> n/16 токен (2048 -> 128, 1024 -> 64)
         self.conv = nn.Sequential(conv_block(2, 32, 7), conv_block(32, d_model, 5))
         tokens = n_points // 16
         self.register_buffer("pos", sinusoidal_positions(tokens, d_model), persistent=False)
         layer = nn.TransformerEncoderLayer(
             d_model, nhead=4, dim_feedforward=2 * d_model, dropout=0.1, batch_first=True, norm_first=True
         )
-        self.attention = nn.TransformerEncoder(layer, num_layers=2, enable_nested_tensor=False)
+        self.attention = nn.TransformerEncoder(layer, num_layers=num_layers, enable_nested_tensor=False)
         self.cls_head = nn.Linear(2 * d_model, num_species)  # логиттер (sigmoid -> бар/жоқ)
         self.temp_head = nn.Linear(2 * d_model, 1)           # T_norm ∈ [0, 1]
 

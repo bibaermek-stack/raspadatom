@@ -13,9 +13,14 @@
 <div class="app">
   <header class="top">
     <h1>Спектр зертханасы</h1>
+    <div class="seg" id="viewSeg" role="group" aria-label="Бөлім">
+      <button type="button" data-view="lab" aria-pressed="true">Зертхана</button>
+      <button type="button" data-view="cam" aria-pressed="false">Камера</button>
+    </div>
     <span class="sub"><b>NIST ASD</b> сызықтары · <b id="nSpecies">29</b> түр · 1D-CNN + Attention браузерде жұмыс істейді</span>
   </header>
 
+  <div id="viewLab">
   <ol class="how" aria-label="Қалай жұмыс істейді">
     <li><span><b>Түр таңдаңыз</b> немесе дайын мысалды басыңыз</span></li>
     <li><span><b>Спектрдегі шыңды басыңыз</b>: сызық ауысуға сәйкес келеді</span></li>
@@ -153,16 +158,116 @@
   </section>
 
   <p class="footer" id="footer"></p>
+  </div>
+
+  <!-- ================= Камера / сурет ================= -->
+  <div id="viewCam" hidden>
+    <ol class="how" aria-label="Камера бойынша қадамдар">
+      <li><span><b>Спектрді түсіріңіз</b>: тор арқылы жарық көзіне қараңыз, не файлды таңдаңыз</span></li>
+      <li><span><b>Калибровка</b>: флуоресцентті шамды түсіріп, «Автокалибровка» басыңыз</span></li>
+      <li><span><b>Белгісіз көзді</b> түсіріңіз: жолақ пен профиль автоматты алынады</span></li>
+      <li><span><b>ЖИ</b> түрлерді анықтайды, ал сызықтар сәйкестігі нәтижені тексереді</span></li>
+    </ol>
+
+    <main class="layout cam-layout">
+      <div class="col">
+        <section class="panel" aria-labelledby="h-img">
+          <header><h2 id="h-img">Сурет</h2><span class="hint grow" id="camStatus">Сурет таңдаңыз немесе виртуал мысалды басыңыз</span></header>
+          <div class="cam-stage">
+            <canvas id="camCanvas" aria-label="Спектр суреті"></canvas>
+            <video id="camVideo" playsinline muted hidden></video>
+          </div>
+          <div class="scene-tools">
+            <button class="btn small" id="camPickFile" type="button">Сурет таңдау</button>
+            <input id="camFile" type="file" accept="image/*" hidden>
+            <button class="btn small" id="camPickShot" type="button">Фото түсіру</button>
+            <input id="camShot" type="file" accept="image/*" capture="environment" hidden>
+            <button class="btn small" id="camLive" type="button">Камераны қосу</button>
+            <button class="btn small" id="camFreeze" type="button" hidden>Қатыру</button>
+          </div>
+          <div class="body">
+            <span class="lbl hint" style="display:block;margin-bottom:8px">Виртуал камера (модельденген суреттер, нақты фото емес)</span>
+            <div class="presets" id="camSamples"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn small" id="camReshoot" type="button">Қайта түсіру</button>
+              <span class="hint" id="camTruth"></span>
+            </div>
+            <div class="sec">
+              <span class="lbl">Жолақ (ROI)</span>
+              <div class="ctl"><label for="camAngle">Бұрыш</label><output id="camAngleO"></output><input id="camAngle" type="range" min="-90" max="90" step="0.1" value="0"></div>
+              <div class="ctl"><label for="camThick">Қалыңдық</label><output id="camThickO"></output><input id="camThick" type="range" min="3" max="120" step="1" value="12"></div>
+              <div class="ctl"><label for="camStart">Басы</label><output id="camStartO"></output><input id="camStart" type="range" min="0" max="100" step="1" value="0"></div>
+              <div class="ctl"><label for="camEnd">Соңы</label><output id="camEndO"></output><input id="camEnd" type="range" min="0" max="100" step="1" value="100"></div>
+              <div class="row" style="margin-top:10px">
+                <button class="btn small" id="camAuto" type="button">Автоматты табу</button>
+                <label class="hint"><input id="camLock" type="checkbox"> ROI бекіту</label>
+                <label class="hint"><input id="camFlip" type="checkbox"> Көк жағы оң жақта</label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel" aria-labelledby="h-prof">
+          <header><h2 id="h-prof">Алынған спектр</h2><span class="hint grow" id="camCalState"></span></header>
+          <div class="spec-wrap">
+            <canvas id="camGraph" aria-label="Спектр профилі"></canvas>
+            <div class="readout" id="camReadout"></div>
+          </div>
+          <div class="body" style="padding-top:0">
+            <div class="sec" style="margin-top:0;padding-top:0;border:0">
+              <span class="lbl">Калибровка (пиксель → нм)</span>
+              <div class="row">
+                <button class="btn primary small" id="camAutoCal" type="button">Автокалибровка: флуоресцентті шам</button>
+                <button class="btn small ghost" id="camClearCal" type="button">Тазалау</button>
+              </div>
+              <p class="hint" id="camCalMsg" style="margin:8px 0 0"></p>
+              <details style="margin-top:12px">
+                <summary>Қолмен калибровка: екі белгілі сызық</summary>
+                <div class="cal-grid">
+                  <button class="btn small" id="camPick1" type="button">1-нүктені таңдау</button>
+                  <label class="hint">λ₁, нм <input id="camWl1" class="num-in" type="number" min="300" max="900" step="0.1" placeholder="405"></label>
+                  <button class="btn small" id="camPick2" type="button">2-нүктені таңдау</button>
+                  <label class="hint">λ₂, нм <input id="camWl2" class="num-in" type="number" min="300" max="900" step="0.1" placeholder="650"></label>
+                </div>
+                <div class="row" style="margin-top:8px">
+                  <span class="hint">Лазер:</span>
+                  <button class="chip" data-laser="405" type="button">405</button>
+                  <button class="chip" data-laser="532" type="button">532</button>
+                  <button class="chip" data-laser="650" type="button">650</button>
+                  <button class="btn small" id="camApplyCal" type="button">Қолдану</button>
+                </div>
+                <p class="hint" id="camPickMsg" style="margin:8px 0 0"></p>
+              </details>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel" aria-labelledby="h-camai">
+          <header><h2 id="h-camai">ЖИ талдауы</h2><span class="hint grow" id="camAiMeta"></span></header>
+          <div class="body" id="camAiBody"></div>
+        </section>
+      </div>
+    </main>
+    <p class="footer" id="camFooter"></p>
+  </div>
 </div>
 
 <script src="data/lines.js"></script>
 <script src="data/model.js"></script>
+<script src="data/model_cam.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/engine3d.js"></script>
 <script src="js/atomscene.js"></script>
 <script src="js/benchscene.js"></script>
 <script src="js/levels.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/camsim.js"></script>
 <script src="js/app.js"></script>
+<script src="js/campanel.js"></script>
 </body>
 </html>

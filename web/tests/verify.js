@@ -27,7 +27,16 @@ for (const c of vec.ai) {
   for (let i = 0; i < c.logits.length; i++) worstLogit = Math.max(worstLogit, Math.abs(out.logits[i] - c.logits[i]));
   worstT = Math.max(worstT, Math.abs(out.tNorm - c.t));
 }
-const res = { physics_cases: vec.physics.length, ai_cases: vec.ai.length,
-              max_abs_diff_clean: worstPhys, max_abs_diff_logit: worstLogit, max_abs_diff_tnorm: worstT };
+// камера моделі (болса)
+let worstCam = 0;
+if (vec.cam && vec.cam.length) {
+  const MC = require('../data/model_cam.js'), cam = new AI.Model(MC);
+  for (const c of vec.cam) {
+    const out = cam.predict(Float32Array.from(c.spec));
+    for (let i = 0; i < c.logits.length; i++) worstCam = Math.max(worstCam, Math.abs(out.logits[i] - c.logits[i]));
+  }
+}
+const res = { physics_cases: vec.physics.length, ai_cases: vec.ai.length, cam_cases: (vec.cam || []).length,
+              max_abs_diff_clean: worstPhys, max_abs_diff_logit: worstLogit, max_abs_diff_tnorm: worstT, max_abs_diff_cam_logit: worstCam };
 console.log(JSON.stringify(res));
-if (worstPhys > 1e-9 || worstLogit > 2e-3 || worstT > 2e-3) { console.error('СӘЙКЕС КЕЛМЕЙДІ'); process.exit(1); }
+if (worstPhys > 1e-9 || worstLogit > 2e-3 || worstT > 2e-3 || worstCam > 2e-3) { console.error('СӘЙКЕС КЕЛМЕЙДІ'); process.exit(1); }
