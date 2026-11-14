@@ -31,11 +31,11 @@
 
   // дайын көздер. build(ctx) -> {lines, cont(λ), truth:[...]}
   var SOURCES = [
-    { id: 'cfl', title: 'Флуоресцентті шам (CFL)', truth: ['Hg I'], build: function (c) {
+    { id: 'cfl', title: 'Флуоресцентті шам (CFL)', truth: ['CFL', 'Hg I'], build: function (c) {
       var L = [], rel = { 404.66: 0.12, 435.83: 0.5, 546.07: 0.9, 576.96: 0.13, 579.07: 0.15 };
       Object.keys(rel).forEach(function (k) { L.push({ wl: +k, a: rel[k] }); });
       [[487.7, 0.3], [543.5, 1.0], [585.0, 0.15], [593.0, 0.25], [611.6, 0.95], [620.0, 0.12], [650.0, 0.14], [690.0, 0.2], [700.0, 0.12]].forEach(function (q) { L.push({ wl: q[0], a: q[1] }); });
-      return { lines: L, cont: function (l) { return 0.45 * G(l, 450, 22) + 0.04; }, truth: ['Hg I'] };
+      return { lines: L, cont: function (l) { return 0.45 * G(l, 450, 22) + 0.04; }, truth: ['CFL', 'Hg I'] };
     } },
     { id: 'ne', title: 'Неон белгісі', truth: ['Ne I'], build: function (c) { return { lines: nistLines([{ sp: c.by['Ne I'], conc: 1 }], 6500, c.rng, 0.15), cont: function () { return 0.01; }, truth: ['Ne I'] }; } },
     { id: 'na', title: 'Натрий көше шамы', truth: ['Na I'], build: function (c) { return { lines: nistLines([{ sp: c.by['Na I'], conc: 1 }], 6000, c.rng, 0.1), cont: function (l) { return 0.04 * G(l, 600, 80); }, truth: ['Na I'] }; } },

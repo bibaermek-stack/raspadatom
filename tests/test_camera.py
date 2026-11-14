@@ -31,6 +31,24 @@ def test_generator_shapes_and_ranges(db):
         assert m in (0.0, 1.0)
 
 
+def test_cfl_source_class(db):
+    """CFL — атомдық емес көз класы: белгі қойылады, ал T маскасы 0 (температура мағынасыз)."""
+    ds = CameraSpectra(db, 10, seed=1)
+    assert ds.species[-1] == "CFL" and "CFL" not in db
+    j, n_cfl, hit, widths = ds.species.index("CFL"), 0, 0, []
+    for i in range(600):
+        _, y, _, m, meta = make_camera_spectrum(db, ds.species, np.random.default_rng([5, i]), return_meta=True)
+        widths.append(meta["fwhm_nm"])
+        if meta["cfl"]:
+            n_cfl += 1
+            hit += y[j] > 0
+            assert m == 0.0
+        else:
+            assert y[j] == 0.0                          # CFL тек CFL үлгілерінде
+    assert 0.05 < n_cfl / 600 < 0.16 and hit / n_cfl > 0.8       # үлесі ≈ 10%, көбі байқалады
+    assert max(widths) > 20 and 0.1 < np.mean(np.array(widths) > 10) < 0.3     # кең (қаныққан) сызықтар режимі: ≈ 18%
+
+
 def test_generator_is_deterministic(db):
     ds = CameraSpectra(db, 10, seed=7)
     assert torch.equal(ds[3][0], ds[3][0]) and torch.equal(ds[3][1], ds[3][1])

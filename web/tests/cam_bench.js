@@ -12,6 +12,7 @@ const N = +process.argv[2] || 150, TTA = process.argv[3] === 'tta';
 const rng = P.mulberry32(777), U = (a, b) => a + (b - a) * rng();
 const model = new AI.Model(M), names = model.species;
 const by = Object.fromEntries(D.species.map(s => [s.name, s]));
+const atomic = names.filter(n => by[n]);          // «CFL» сияқты көз кластары атомдық түр емес
 const kinds = {}, kindsGate = {}, kindsConf = {};
 let roiFail = 0, calFail = 0, cflN = 0, cflOk = 0, cflRms = [];
 
@@ -36,8 +37,8 @@ for (let n = 0; n < N; n++) {
   else if (u < 0.22) { src = CS.SOURCES.find(s => s.id === 'cfl'); kind = 'cfl'; }
   else {
     const k = 1 + Math.floor(rng() * 3), ch = [];
-    while (ch.length < k) { const j = Math.floor(rng() * names.length); if (!ch.includes(j)) ch.push(j); }
-    const sel = ch.map(j => ({ sp: by[names[j]], conc: Math.pow(10, U(-0.9, 0)) }));
+    while (ch.length < k) { const j = Math.floor(rng() * atomic.length); if (!ch.includes(j)) ch.push(j); }
+    const sel = ch.map(j => ({ sp: by[atomic[j]], conc: Math.pow(10, U(-0.9, 0)) }));
     src = CS.selectionSource(sel, U(5000, 12000), U(0.1, 0.4), rng, () => 0.01 + 0.2 * rng() * 0.1);
     kind = 'nist' + k;
   }

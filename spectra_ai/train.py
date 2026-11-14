@@ -2,6 +2,7 @@
 
   python -m spectra_ai.train --epochs 30                                  # лаборатория домені (200–900 нм)
   python -m spectra_ai.train --domain camera --epochs 30 --out checkpoints/camera_net.pt   # камера домені
+  python -m spectra_ai.train --domain camera --epochs 8 --lr 1e-3 --init checkpoints/camera_net.pt   # жаңа домен/класқа дейін оқыту
 """
 from __future__ import annotations
 
@@ -17,6 +18,34 @@ from .model import SpectralAttentionNet
 from .nist import CSV_PATH, load_database
 from .synth import N_POINTS, T_MAX, T_MIN, SyntheticSpectra
 from .synth_cam import CAM_N, CameraSpectra
+
+
+def load_init(model, species, path):
+    """Бұрынғы чекпойнттан бастау: түрлер аты бойынша сәйкестендіріліп, жаңа класс жолдары кездейсоқ қалады."""
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    old, sd = ck["species"], ck["state_dict"]
+    cur = model.state_dict()
+    for k, v in sd.items():
+        if k.startswith("cls_head."):
+            continue
+        cur[k] = v
+    w, b = cur["cls_head.weight"].clone(), cur["cls_head.bias"].clone()
+    b[:] = -4.0                                       # жаңа класс: бастапқыда «жоқ»
+    kept = 0
+    for i, name in enumerate(species):
+        if name in old:
+            j = old.index(name)
+            w[i], b[i] = sd["cls_head.weight"][j], sd["cls_head.bias"][j]
+            kept += 1
+    cur["cls_head.weight"], cur["cls_head.bias"] = w, b
+    model.load_state_dict(cur)
+    return kept
+
+
+def save(path, model, species, m, a, n_points, epoch):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    torch.save({"state_dict": model.state_dict(), "species": species, "metrics": m, "domain": a.domain,
+                "n_points": n_points, "num_layers": a.layers, "epoch": epoch}, path)
 
 
 def unpack(batch):
@@ -67,6 +96,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--out", default="checkpoints/spectral_net.pt")
+    ap.add_argument("--init", default=None, help="бастапқы чекпойнт (fine-tune)")
     a = ap.parse_args()
 
     torch.manual_seed(0)
@@ -82,6 +112,8 @@ def main():
     tl = DataLoader(train_ds, a.batch, shuffle=True, num_workers=a.workers, persistent_workers=a.workers > 0)
     vl = DataLoader(val_ds, 256, num_workers=a.workers)
     model = SpectralAttentionNet(len(species), n_points=n_points, num_layers=a.layers).to(device)
+    if a.init:
+        print(f"Бастапқы чекпойнт: {a.init}, ортақ түрлер: {load_init(model, species, a.init)}/{len(species)}")
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-2)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, a.lr, total_steps=a.epochs * len(tl))
 
@@ -105,10 +137,9 @@ def main():
         print(f"ep {ep+1:2d}/{a.epochs} loss {tot/len(tl):.4f} | F1 {m['f1']:.3f} "
               f"P {m['precision']:.3f} R {m['recall']:.3f} exact {m['exact_match']:.3f} "
               f"T-MAE {m['T_MAE_K']:.0f} K{extra} | {time.time()-t0:.0f}s", flush=True)
+        save(a.out + ".last", model, species, m, a, n_points, ep + 1)   # әр эпохада аралық сақтау
 
-    Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"state_dict": model.state_dict(), "species": species, "metrics": m,
-                "domain": a.domain, "n_points": n_points, "num_layers": a.layers}, a.out)
+    save(a.out, model, species, m, a, n_points, a.epochs)
     print("Сақталды:", a.out)
 
 
