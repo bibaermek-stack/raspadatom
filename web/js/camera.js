@@ -298,36 +298,114 @@
   }
 
   // ---------- 4. калибровка ----------
+  // λ(i) = a·i + b + c·i² (c — нелинейлік, міндетті емес: объектив/перспектива дисперсияны қисайтады)
+  function lam(cal, i) { return cal.a * i + cal.b + (cal.c ? cal.c * i * i : 0); }
+  // кері: λ -> индекс (монотонды деп алынады; квадраттық жағдайда бисекция)
+  function idx(cal, wl, n) {
+    if (!cal.c) return (wl - cal.b) / cal.a;
+    var lo = -0.25 * n, hi = 1.25 * n, flo = lam(cal, lo) - wl, k;
+    for (k = 0; k < 50; k++) {
+      var mid = 0.5 * (lo + hi), fm = lam(cal, mid) - wl;
+      if ((fm > 0) === (flo > 0)) { lo = mid; flo = fm; } else hi = mid;
+    }
+    return 0.5 * (lo + hi);
+  }
+  function disp(cal, n) { return Math.abs((lam(cal, n - 1) - lam(cal, 0)) / (n - 1)); }       // орташа нм/пиксель
+  function localDisp(cal, i) { return Math.abs(lam(cal, i + 0.5) - lam(cal, i - 0.5)); }
+
   // Флуоресцентті шам (CFL) эталоны: Hg + Tb/Eu фосфорлары. Төмен ажыратымдылықта 543.5 (Tb) пен 546.1 (Hg) бірігеді.
+  // Қызыл жақтағы Eu³⁺ сызықтары (650–700 нм) нақты суретте анық көрінеді: оларсыз сәйкестік бір сызыққа ығысып кетеді.
   var CFL_REF = [
-    { wl: 404.66, w: 0.25, name: 'Hg 404.7' }, { wl: 435.83, w: 1.0, name: 'Hg 435.8' }, { wl: 487.7, w: 0.5, name: 'Tb 487.7' },
-    { wl: 544.5, w: 1.0, name: 'Tb/Hg 544.5' }, { wl: 578.0, w: 0.4, name: 'Hg 577/579' }, { wl: 611.6, w: 1.0, name: 'Eu 611.6' }
+    { wl: 404.66, w: 0.2, name: 'Hg 404.7' }, { wl: 435.83, w: 0.8, name: 'Hg 435.8' }, { wl: 487.7, w: 0.5, name: 'Tb 487.7' },
+    { wl: 544.5, w: 1.0, name: 'Tb/Hg 544.5' }, { wl: 578.0, w: 0.35, name: 'Hg 577/579' }, { wl: 593.0, w: 0.2, name: 'Eu 593' },
+    { wl: 611.6, w: 1.0, name: 'Eu 611.6' }, { wl: 650.0, w: 0.15, name: 'Eu 650' }, { wl: 690.0, w: 0.3, name: 'Eu 690' }, { wl: 700.0, w: 0.25, name: 'Eu 700' }
   ];
+  // «CFL» — атомдық емес көз класы: модель оны Hg + Tb³⁺/Eu³⁺ фосфор сызықтарының жиынтығы ретінде үйренген
+  var CFL_SPECIES = { name: 'CFL', source: true, sym: 'CFL', charge: 0,
+    lines: CFL_REF.map(function (r) { return { wl: r.wl, st: r.w, name: r.name }; }) };
   function calib2(t1, w1, t2, w2) {
     if (t1 === t2 || w1 === w2) return null;
     var a = (w2 - w1) / (t2 - t1);
     return { a: a, b: w1 - a * t1, rms: 0, n: 2, kind: 'two-point' };
   }
-  // pr: extractProfile нәтижесі; t — профиль индексі. -> {a, b, rms, n, kind, matched:[{x, wl, name}]} немесе null
+
+  // Түс -> толқын ұзындығы (шамамен ±20 нм): Бруттон түстер шкаласының кері нұсқасы.
+  // Түссіз, қаныққан (ақ) және қызыл-күлгін (екіұшты) пикселдер үшін null.
+  function hueLambda(r, g, b) {
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h;
+    if (mx < 1e-4 || d / mx < 0.25) return null;
+    if (mx === r) h = 60 * (((g - b) / d + 6) % 6); else if (mx === g) h = 60 * ((b - r) / d + 2); else h = 60 * ((r - g) / d + 4);
+    if (h >= 300) return null;
+    if (h >= 240) return 440 - (h - 240);
+    if (h >= 180) return 490 - (h - 180) / 60 * 50;
+    if (h >= 120) return 510 - (h - 120) / 60 * 20;
+    if (h >= 60) return 580 - (h - 60) / 60 * 70;
+    return 645 - h / 60 * 65;
+  }
+  // профиль бойынша түстен алынған λ(i) және салмақ
+  function hueMap(prof) {
+    var M = prof.M, R = boxSmooth(prof.R, 3), G = boxSmooth(prof.G, 3), B = boxSmooth(prof.B, 3), L = new Float32Array(M), W = new Float32Array(M), mx = 1e-9, i;
+    for (i = 0; i < M; i++) if (prof.p[i] > mx) mx = prof.p[i];
+    for (i = 0; i < M; i++) {
+      var sat = Math.max(R[i], G[i], B[i]) > 0.92, l = sat ? null : hueLambda(R[i], G[i], B[i]);
+      if (l === null || prof.p[i] < 0.04 * mx) { L[i] = NaN; W[i] = 0; } else { L[i] = l; W[i] = prof.p[i] / mx; }
+    }
+    return { lam: L, w: W };
+  }
+  // түс бойынша жуықтап калибровка (±20 нм): λ(i) = a·i + b, Хьюбер-IRLS. Нақтылау үшін бастапқы нүкте.
+  function calibrateByHue(prof) {
+    var hm = hueMap(prof), M = prof.M, i, a = 0, b = 0, ok = false;
+    var xs = [], ys = [], ws = [];
+    for (i = 0; i < M; i++) if (hm.w[i] > 0) { xs.push(i); ys.push(hm.lam[i]); ws.push(hm.w[i]); }
+    if (xs.length < 30) return null;
+    var cur = ws.slice();
+    for (var it = 0; it < 6; it++) {
+      var sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, k;
+      for (k = 0; k < xs.length; k++) { sw += cur[k]; sx += cur[k] * xs[k]; sy += cur[k] * ys[k]; sxx += cur[k] * xs[k] * xs[k]; sxy += cur[k] * xs[k] * ys[k]; }
+      var den = sw * sxx - sx * sx;
+      if (Math.abs(den) < 1e-9) return null;
+      a = (sw * sxy - sx * sy) / den; b = (sy - a * sx) / sw;
+      for (k = 0; k < xs.length; k++) { var e = Math.abs(a * xs[k] + b - ys[k]); cur[k] = ws[k] * (e < 15 ? 1 : 15 / e); }
+      ok = true;
+    }
+    var ss = 0, sw2 = 0;
+    for (var q = 0; q < xs.length; q++) { var e2 = a * xs[q] + b - ys[q]; ss += ws[q] * e2 * e2; sw2 += ws[q]; }
+    var rms = Math.sqrt(ss / sw2), span = Math.abs(a) * (xs[xs.length - 1] - xs[0]);
+    if (!ok || span < 80) return null;
+    return { a: a, b: b, rms: rms, n: xs.length, kind: 'hue', approx: true };
+  }
+
+  // pr: extractProfile нәтижесі; i — профиль индексі. -> {a, b, c?, rms, n, kind, matched:[{x, wl, name}]} немесе null
+  // Сәйкестік түске де сәйкес болуы керек: сызықтың түсінен алынған λ эталоннан >50 нм айырмашылық берсе, санамаймыз.
   function autoCalibrateCFL(prof) {
     var y = gauss(prof.p, 1.2), mx = 0, i;
     for (i = 0; i < y.length; i++) if (y[i] > mx) mx = y[i];
     if (mx <= 0) return null;
-    var peaks = findPeaks(y, 0.06 * mx, Math.max(4, y.length / 150)).slice(0, 9), M = y.length, best = null;
+    var peaks = findPeaks(y, 0.06 * mx, Math.max(4, y.length / 150)).slice(0, 10), M = y.length, best = null;
     if (peaks.length < 3) return null;
+    var hm = prof.R ? hueMap(prof) : null;
+    peaks.forEach(function (pk) {
+      pk.hue = null;
+      if (!hm) return;
+      var sw = 0, sl = 0, c = Math.round(pk.x), j;
+      for (j = Math.max(0, c - 4); j <= Math.min(M - 1, c + 4); j++) if (hm.w[j] > 0) { sw += hm.w[j]; sl += hm.w[j] * hm.lam[j]; }
+      if (sw > 0) pk.hue = sl / sw;
+    });
     var tol = 4.5;
     function score(a, b) {
-      var s = 0, used = {}, matched = [];
+      var s = 0, used = {}, matched = [], bad = 0;
       peaks.forEach(function (pk) {
         var wl = a * pk.x + b, bi = -1, bd = 1e9;
         CFL_REF.forEach(function (r, ri) { var d = Math.abs(wl - r.wl); if (d < bd) { bd = d; bi = ri; } });
         if (bi >= 0 && bd < tol) {
-          var r = CFL_REF[bi], gain = (pk.prom / mx) * r.w * (1 - (bd / tol) * (bd / tol));
+          var r = CFL_REF[bi];
+          if (pk.hue !== null && Math.abs(pk.hue - r.wl) > 50) { bad++; return; }       // түс сәйкес емес
+          var gain = (pk.prom / mx) * r.w * (1 - (bd / tol) * (bd / tol));
           if (!used[bi] || used[bi] < gain) { s += gain - (used[bi] || 0); used[bi] = gain; }
           matched.push({ x: pk.x, wl: r.wl, name: r.name, bi: bi, d: bd });
         }
       });
-      return { s: s, matched: matched, n: Object.keys(used).length };
+      return { s: s - 0.3 * bad, matched: matched, n: Object.keys(used).length };
     }
     for (var p1 = 0; p1 < peaks.length; p1++) for (var p2 = p1 + 1; p2 < peaks.length; p2++) {
       var xa = peaks[p1].x, xb = peaks[p2].x;
@@ -342,18 +420,42 @@
       }
     }
     if (!best) return null;
-    // нақтылау: сәйкес шыңдар бойынша ең кіші квадраттар (әр эталонға ең жақыны)
+    // нақтылау: әр эталонға ең жақын шың бойынша ең кіші квадраттар
     var one = {};
     best.matched.forEach(function (m) { if (!one[m.bi] || m.d < one[m.bi].d) one[m.bi] = m; });
-    var pts = Object.keys(one).map(function (k) { return one[k]; });
-    var sx = 0, sy = 0, sxx = 0, sxy = 0, n = pts.length;
-    pts.forEach(function (m) { sx += m.x; sy += m.wl; sxx += m.x * m.x; sxy += m.x * m.wl; });
-    var den = n * sxx - sx * sx;
-    if (n < 3 || Math.abs(den) < 1e-9) return null;
-    var A = (n * sxy - sx * sy) / den, Bc = (sy - A * sx) / n, ss = 0;
-    pts.forEach(function (m) { var e = A * m.x + Bc - m.wl; ss += e * e; });
-    if (n === 3 && Math.sqrt(ss / n) > 1.2) return null;      // 3 сәйкестік тек өте дәл болса ғана
-    return { a: A, b: Bc, rms: Math.sqrt(ss / n), n: n, kind: 'cfl', matched: pts.map(function (m) { return { x: m.x, wl: m.wl, name: m.name }; }) };
+    var pts = Object.keys(one).map(function (k) { return one[k]; }), n = pts.length;
+    if (n < 3) return null;
+    function lsq(deg) {
+      // ең кіші квадраттар: λ = Σ c_k x^k, k=0..deg (қалыпты теңдеулер, Гаусс)
+      var m = deg + 1, A = [], v = [], r, c, k;
+      for (r = 0; r < m; r++) { A.push(new Array(m).fill(0)); v.push(0); }
+      pts.forEach(function (pt) {
+        var pw = [1]; for (k = 1; k <= 2 * deg; k++) pw.push(pw[k - 1] * pt.x);
+        for (r = 0; r < m; r++) { v[r] += pw[r] * pt.wl; for (c = 0; c < m; c++) A[r][c] += pw[r + c]; }
+      });
+      for (r = 0; r < m; r++) {
+        var piv = r; for (c = r + 1; c < m; c++) if (Math.abs(A[c][r]) > Math.abs(A[piv][r])) piv = c;
+        if (Math.abs(A[piv][r]) < 1e-12) return null;
+        var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp; var tv = v[r]; v[r] = v[piv]; v[piv] = tv;
+        for (c = r + 1; c < m; c++) { var f = A[c][r] / A[r][r]; for (k = r; k < m; k++) A[c][k] -= f * A[r][k]; v[c] -= f * v[r]; }
+      }
+      var sol = new Array(m).fill(0);
+      for (r = m - 1; r >= 0; r--) { var acc = v[r]; for (c = r + 1; c < m; c++) acc -= A[r][c] * sol[c]; sol[r] = acc / A[r][r]; }
+      var ss = 0; pts.forEach(function (pt) { var e = sol.reduce(function (a2, cf, kk) { return a2 + cf * Math.pow(pt.x, kk); }, 0) - pt.wl; ss += e * e; });
+      return { co: sol, rms: Math.sqrt(ss / n) };
+    }
+    var lin = lsq(1);
+    if (!lin) return null;
+    if (n === 3 && lin.rms > 1.2) return null;      // 3 сәйкестік тек өте дәл болса ғана
+    var cal = { a: lin.co[1], b: lin.co[0], rms: lin.rms, n: n, kind: 'cfl', matched: pts.map(function (m) { return { x: m.x, wl: m.wl, name: m.name }; }) };
+    if (n >= 5) {                                   // жеткілікті сызық болса, нелинейлікті тексереміз
+      var quad = lsq(2);
+      if (quad && quad.rms < 0.7 * lin.rms && Math.abs(quad.co[2]) * M * M < 40) {
+        var q = { a: quad.co[1], b: quad.co[0], c: quad.co[2] };
+        if (lam(q, 0) !== lam(q, M - 1) && (lam(q, M - 1) - lam(q, 0)) * (q.a) > 0 && Math.abs(2 * q.c * M) < Math.abs(q.a) * 0.9) { cal = { a: q.a, b: q.b, c: q.c, rms: quad.rms, n: n, kind: 'cfl', matched: cal.matched }; }
+      }
+    }
+    return cal;
   }
 
   // ---------- 5. модель кірісі ----------
@@ -363,11 +465,11 @@
     var n = p.length, ys = gauss(p, opts.smooth === undefined ? 0.8 : opts.smooth), x = new Float32Array(WIN_N), cov = 0, i;
     // базалық деңгей: жарамды үлгілердің төмен перцентилі
     var valid = [];
-    for (i = 0; i < n; i++) { var wl = cal.a * i + cal.b; if (wl >= WIN_LO && wl <= WIN_HI) valid.push(ys[i]); }
+    for (i = 0; i < n; i++) { var wl = lam(cal, i); if (wl >= WIN_LO && wl <= WIN_HI) valid.push(ys[i]); }
     if (valid.length < 16) return null;
     var base = percentile(valid, 0.05), mx = 0;
     for (i = 0; i < WIN_N; i++) {
-      var l = WIN_LO + i * WIN_DX, t = (l - cal.b) / cal.a;
+      var l = WIN_LO + i * WIN_DX, t = idx(cal, l, n);
       if (!(t >= 0 && t <= n - 1)) { x[i] = 0; continue; }
       var t0 = Math.floor(t), t1 = Math.min(n - 1, t0 + 1), f = t - t0, v = ys[t0] * (1 - f) + ys[t1] * f - base;
       x[i] = v > 0 ? v : 0; cov++;
@@ -375,13 +477,13 @@
     }
     if (mx <= 1e-6) return null;
     for (i = 0; i < WIN_N; i++) x[i] /= mx;
-    var lo = Math.max(WIN_LO, Math.min(cal.b, cal.a * (n - 1) + cal.b)), hi = Math.min(WIN_HI, Math.max(cal.b, cal.a * (n - 1) + cal.b));
+    var l0 = lam(cal, 0), l1 = lam(cal, n - 1), lo = Math.max(WIN_LO, Math.min(l0, l1)), hi = Math.min(WIN_HI, Math.max(l0, l1));
     return { x: x, lo: lo, hi: hi, coverage: cov / WIN_N, max: mx + base, base: base };
   }
 
   // сызық сигналы: жұқа тегістелген профиль минус тегіс фон (σ ≈ 35 нм). Кең «төбелер» (фосфор, континуум) кетеді.
   function lineSignal(p, cal) {
-    var sig = Math.max(6, 35 / Math.max(Math.abs(cal.a), 0.05)), fine = gauss(p, 1.0), bgv = gauss(p, sig), r = new Float32Array(p.length), i;
+    var sig = Math.max(6, 35 / Math.max(disp(cal, p.length), 0.05)), fine = gauss(p, 1.0), bgv = gauss(p, sig), r = new Float32Array(p.length), i;
     for (i = 0; i < p.length; i++) { var v = fine[i] - bgv[i]; r[i] = v > 0 ? v : 0; }
     return { res: r, fine: fine };
   }
@@ -403,8 +505,8 @@
       var half = pk.h - pk.prom / 2, l = pk.i, r = pk.i;
       while (l > 0 && y[l] > half) l--;
       while (r < y.length - 1 && y[r] > half) r++;
-      var w = (r - l) * Math.abs(cal.a);
-      if (w <= (maxNm || 15)) out.push({ x: pk.x, wl: cal.a * pk.x + cal.b, h: pk.h, prom: pk.prom, fwhm: w });
+      var w = (r - l) * localDisp(cal, pk.i);
+      if (w <= (maxNm || 15)) out.push({ x: pk.x, wl: lam(cal, pk.x), h: pk.h, prom: pk.prom, fwhm: w });
     });
     return out;
   }
@@ -420,7 +522,8 @@
     names.forEach(function (n, k) { if (res.probs[k] > 0.5) pred.push(k); });
     pred.sort(function (a, b) { return res.probs[b] - res.probs[a]; });
     var gated = continuum ? [] : pred, fwhm = estimateFwhm(prof.p, cal);
-    var sel = gated.slice(0, 3).map(function (k) { return { sp: byName[names[k]], conc: 1 }; });
+    var sel = gated.slice(0, 3).map(function (k) { return { sp: names[k] === CFL_SPECIES.name ? CFL_SPECIES : byName[names[k]], conc: 1 }; })
+      .filter(function (s) { return s.sp; });
     var ver = verify(prof, cal, fwhm, sel, species, 8000), confirmed = [];
     ver.perSpecies.forEach(function (ps) { if (ps.expected.length && ps.found / ps.expected.length >= 0.4) confirmed.push(ps.name); });
     return { inp: inp, res: res, lin: lin, narrow: narrow, continuum: continuum, pred: pred, predGated: gated, confirmed: confirmed, fwhm: fwhm, ver: ver };
@@ -428,7 +531,7 @@
 
   // калибровкаға шағын ығысу/масштаб: λ' = scale·(λ−580)+580+shift
   function perturbCal(cal, shift, scale) {
-    return { a: scale * cal.a, b: scale * (cal.b - 580) + 580 + shift, kind: cal.kind, provisional: cal.provisional };
+    return { a: scale * cal.a, b: scale * (cal.b - 580) + 580 + shift, c: cal.c ? scale * cal.c : 0, kind: cal.kind, provisional: cal.provisional };
   }
   // калибровка қателігіне төзімділік: ығысулар торы бойынша ықтималдықтардың орташасы (test-time augmentation)
   function predictTTA(model, p, cal, grid) {
@@ -459,7 +562,7 @@
       var half = pk.h - pk.prom / 2, l = pk.i, r = pk.i;
       while (l > 0 && y[l] > half) l--;
       while (r < y.length - 1 && y[r] > half) r++;
-      if (r > l) w.push((r - l) * Math.abs(cal.a));
+      if (r > l) w.push((r - l) * localDisp(cal, pk.i));
     });
     w.sort(function (x, y2) { return x - y2; });
     return w.length ? clamp(w[Math.floor((w.length - 1) * 0.35)], 1.2, 25) : 4;
@@ -470,7 +573,14 @@
                   { wl: 650, name: 'Eu³⁺ (фосфор)' }, { wl: 690, name: 'Eu³⁺ (фосфор)' }];
 
   function speciesExpected(sp, T, lo, hi) {
-    var st = P.boltzmannStrengths(sp, T), m = 0, i, out = [];
+    var m = 0, i, out = [];
+    if (sp.source) {                         // көз класы: сызықтары тұрақты тізім
+      sp.lines.forEach(function (l) { if (l.wl >= lo && l.wl <= hi && l.st > m) m = l.st; });
+      if (m <= 0) return out;
+      sp.lines.forEach(function (l, j) { if (l.wl >= lo && l.wl <= hi) out.push({ wl: l.wl, st: l.st / m, i: j }); });
+      return out;
+    }
+    var st = P.boltzmannStrengths(sp, T);
     for (i = 0; i < st.length; i++) if (sp.wl[i] >= lo && sp.wl[i] <= hi && st[i] > m) m = st[i];
     if (m <= 0) return out;
     for (i = 0; i < st.length; i++) if (sp.wl[i] >= lo && sp.wl[i] <= hi) out.push({ wl: sp.wl[i], st: st[i] / m, i: i });
@@ -487,9 +597,9 @@
       var half = pk.h - pk.prom / 2, l = pk.i, r = pk.i;
       while (l > 0 && y[l] > half) l--;
       while (r < y.length - 1 && y[r] > half) r++;
-      if ((r - l) * Math.abs(cal.a) <= 20) peaks.push({ wl: cal.a * pk.x + cal.b, h: pk.h / mx, prom: pk.prom / mx });      // кең «төбелер» сызық емес
+      if ((r - l) * localDisp(cal, pk.i) <= 20) peaks.push({ wl: lam(cal, pk.x), h: pk.h / mx, prom: pk.prom / mx });      // кең «төбелер» сызық емес
     });
-    var lo = Math.max(WIN_LO, Math.min(cal.b, cal.a * (prof.p.length - 1) + cal.b)), hi = Math.min(WIN_HI, Math.max(cal.b, cal.a * (prof.p.length - 1) + cal.b));
+    var l0 = lam(cal, 0), l1 = lam(cal, prof.p.length - 1), lo = Math.max(WIN_LO, Math.min(l0, l1)), hi = Math.min(WIN_HI, Math.max(l0, l1));
     var tol = Math.max(2.5, 0.9 * fwhmNm), explained = new Array(peaks.length).fill(false), per = [];
     var delta = new Float64Array(WIN_N);
     species.forEach(function (s) {
@@ -530,9 +640,10 @@
   }
 
   return {
-    WIN_LO: WIN_LO, WIN_HI: WIN_HI, WIN_N: WIN_N, WIN_DX: WIN_DX, CFL_REF: CFL_REF, PHOSPHOR: PHOSPHOR,
+    WIN_LO: WIN_LO, WIN_HI: WIN_HI, WIN_N: WIN_N, WIN_DX: WIN_DX, CFL_REF: CFL_REF, CFL_SPECIES: CFL_SPECIES, PHOSPHOR: PHOSPHOR,
     detectBand: detectBand, extractProfile: extractProfile, colorDirection: colorDirection,
     findPeaks: findPeaks, gauss: gauss, calib2: calib2, autoCalibrateCFL: autoCalibrateCFL,
+    lam: lam, idx: idx, disp: disp, localDisp: localDisp, hueLambda: hueLambda, hueMap: hueMap, calibrateByHue: calibrateByHue,
     toModelInput: toModelInput, lineness: lineness, narrowPeaks: narrowPeaks, assess: assess, perturbCal: perturbCal, predictTTA: predictTTA, estimateFwhm: estimateFwhm, verify: verify, downLuma: downLuma
   };
 });
