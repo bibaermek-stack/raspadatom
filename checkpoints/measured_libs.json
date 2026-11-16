@@ -1,0 +1,149 @@
+{
+  "sources": {
+    "chemcam_single": {
+      "file": "single-00000-of-00001.parquet",
+      "train": 817174,
+      "validation": 46837,
+      "test": 44086,
+      "invalid": 0
+    },
+    "chemcam_stat": {
+      "file": "stat-00000-of-00001.parquet",
+      "train": 55042,
+      "validation": 3150,
+      "test": 2966,
+      "invalid": 0
+    },
+    "kepes": {
+      "file": "test.h5",
+      "train": 16500,
+      "validation": 2500,
+      "test": 1000,
+      "invalid": 0
+    }
+  },
+  "device": "cuda",
+  "selected_epoch": 3,
+  "mask_fraction": 0.2,
+  "history": [
+    {
+      "epoch": 1,
+      "train_rmse": 0.03849318608042274,
+      "validation_macro_rmse": 0.03985375026529386,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.02507467756442062,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.016190954601072036,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.022202883400773726,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.014320729555689807,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07228368983068721,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.05373459583653501,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "train_rmse": 0.026221931237379287,
+      "validation_macro_rmse": 0.037833720856199744,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.022660184830872922,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.01467156140309204,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.019491128881644365,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.012721683978196396,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07134984885608193,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.05272207159845305,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "train_rmse": 0.024378670610236786,
+      "validation_macro_rmse": 0.037604585308821305,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.020967347461003937,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.013514629497159739,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.017474291644580555,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.011386735054646309,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07437211682087942,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.054814400254655275,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    }
+  ],
+  "test": {
+    "chemcam_single": {
+      "spectra": 44086,
+      "masked_bins": 7940031,
+      "rmse": 0.020825627918062417,
+      "linear_interpolation_rmse": 0.10387140284531216,
+      "mae": 0.013417256140120863,
+      "linear_interpolation_mae": 0.05911268246307855
+    },
+    "chemcam_stat": {
+      "spectra": 2966,
+      "masked_bins": 535849,
+      "rmse": 0.01739453385829585,
+      "linear_interpolation_rmse": 0.10483219652891267,
+      "mae": 0.011322810893612286,
+      "linear_interpolation_mae": 0.059721545563675586
+    },
+    "kepes": {
+      "spectra": 1000,
+      "masked_bins": 206232,
+      "rmse": 0.07362948954238524,
+      "linear_interpolation_rmse": 0.1063801974184675,
+      "mae": 0.054283837877366264,
+      "linear_interpolation_mae": 0.06870857687731535
+    }
+  }
+}

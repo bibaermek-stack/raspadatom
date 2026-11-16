@@ -1,0 +1,3282 @@
+{
+  "sources": {
+    "chemcam_single": {
+      "file": "single-00000-of-00001.parquet",
+      "train": 817174,
+      "validation": 46837,
+      "test": 44086,
+      "invalid": 0
+    },
+    "chemcam_stat": {
+      "file": "stat-00000-of-00001.parquet",
+      "train": 55042,
+      "validation": 3150,
+      "test": 2966,
+      "invalid": 0
+    },
+    "kepes": {
+      "file": "test.h5",
+      "train": 16500,
+      "validation": 2500,
+      "test": 1000,
+      "invalid": 0
+    }
+  },
+  "device": "cuda",
+  "selected_epoch": 97,
+  "completed_epochs": 100,
+  "batch_size": 2048,
+  "bfloat16": true,
+  "mask_fraction": 0.2,
+  "history": [
+    {
+      "epoch": 1,
+      "train_rmse": 0.03849318608042274,
+      "validation_macro_rmse": 0.03985375026529386,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.02507467756442062,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.016190954601072036,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.022202883400773726,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.014320729555689807,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07228368983068721,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.05373459583653501,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "train_rmse": 0.026221931237379287,
+      "validation_macro_rmse": 0.037833720856199744,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.022660184830872922,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.01467156140309204,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.019491128881644365,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.012721683978196396,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07134984885608193,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.05272207159845305,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "train_rmse": 0.024378670610236786,
+      "validation_macro_rmse": 0.037604585308821305,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8440772,
+          "rmse": 0.020967347461003937,
+          "linear_interpolation_rmse": 0.1038571157210878,
+          "mae": 0.013514629497159739,
+          "linear_interpolation_mae": 0.059160461714876315
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 569000,
+          "rmse": 0.017474291644580555,
+          "linear_interpolation_rmse": 0.10442837474293044,
+          "mae": 0.011386735054646309,
+          "linear_interpolation_mae": 0.05960169980228471
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512752,
+          "rmse": 0.07437211682087942,
+          "linear_interpolation_rmse": 0.10662828641017817,
+          "mae": 0.054814400254655275,
+          "linear_interpolation_mae": 0.06906012037739492
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "train_rmse": 0.022403907868161804,
+      "seconds": 5.016237699979683,
+      "validation_macro_rmse": 0.035554226509444654,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.019673326881553172,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.012445473520094032,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01617893722026556,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.010219041242657354,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.07081041542651524,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05235546429554721,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 5,
+      "train_rmse": 0.022098016124197036,
+      "seconds": 4.966818199987756,
+      "validation_macro_rmse": 0.0350775078972529,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.019318058199705914,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.012226476184630493,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.015599002699268777,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009800837461965759,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.070315462792784,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051991804752669256,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 6,
+      "train_rmse": 0.02184789343262041,
+      "seconds": 4.997095300001092,
+      "validation_macro_rmse": 0.034928277747208296,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.019073242721876833,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.012060118715092081,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.015448476353593503,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00976017753073563,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.07026311416615455,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.052109092630406854,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 7,
+      "train_rmse": 0.021758731738095914,
+      "seconds": 5.002954800002044,
+      "validation_macro_rmse": 0.03539829857891041,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.019724769404243413,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.012718915792226646,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.016100175836121642,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.010459053263899286,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.07036995049636616,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05208083278862902,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 8,
+      "train_rmse": 0.021484813786531786,
+      "seconds": 5.010508799983654,
+      "validation_macro_rmse": 0.03444688597078533,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01881768274153383,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011917164154541929,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.015193371997804267,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009609193016340964,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06932960317301791,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05143780888274025,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 9,
+      "train_rmse": 0.021517674732760703,
+      "seconds": 5.008087299996987,
+      "validation_macro_rmse": 0.03428496429021557,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018671191952206217,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011791354059548505,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014944391736019023,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009441318251096443,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06923930918242147,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051336622631451514,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 10,
+      "train_rmse": 0.021322570826911105,
+      "seconds": 5.032604200008791,
+      "validation_macro_rmse": 0.03427692218047091,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01860032254467525,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011789675936798357,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01485895733675105,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009418603835128447,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06937148665998644,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05150591472005046,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 11,
+      "train_rmse": 0.021181197376449672,
+      "seconds": 5.015584600012517,
+      "validation_macro_rmse": 0.035203903967235425,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.019151981372682834,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.012320848581918632,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.015461641347179787,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0100052723658949,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.07099808918184365,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.052604204295605785,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 12,
+      "train_rmse": 0.02110899098497418,
+      "seconds": 5.050614800013136,
+      "validation_macro_rmse": 0.034284087793522454,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018600926576046808,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011845814748888343,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01480900207045913,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009475534791147435,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06944233473406142,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05155368186151704,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 13,
+      "train_rmse": 0.020908068659359336,
+      "seconds": 5.059744300000602,
+      "validation_macro_rmse": 0.034128363686316894,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018299357412385267,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011550618965059168,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01446474193073447,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009122105496580771,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06962099171583094,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05186423120782305,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 14,
+      "train_rmse": 0.02100188358773938,
+      "seconds": 5.013877600023989,
+      "validation_macro_rmse": 0.03491723466209403,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018397467399943995,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011634374988880468,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014640122775700117,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009259092921888347,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.07171411381063798,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.053191356854389915,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 15,
+      "train_rmse": 0.020856445085708244,
+      "seconds": 4.996334299998125,
+      "validation_macro_rmse": 0.03362255813657697,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01807935354452777,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011393703831701876,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014214203696468836,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008956660333589463,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0685741171687343,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051047449319310795,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 16,
+      "train_rmse": 0.020784021235166816,
+      "seconds": 5.018223899998702,
+      "validation_macro_rmse": 0.033869118726453575,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018221714659722513,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011501260287791287,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014401025359458766,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00908581110908066,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06898461616017945,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0514057810620587,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 17,
+      "train_rmse": 0.02065264186466573,
+      "seconds": 5.087311999988742,
+      "validation_macro_rmse": 0.03384755220342047,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01845236750773417,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011777072873559946,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014673607310755524,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.009462324635179526,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06841668179177172,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05096100318792372,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 18,
+      "train_rmse": 0.020688021611569556,
+      "seconds": 5.13048739999067,
+      "validation_macro_rmse": 0.033899430070301544,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018067123077779027,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011397282467848243,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014182643924686947,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00890675501325419,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06944852320843867,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051634170925042175,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 19,
+      "train_rmse": 0.020636468010898242,
+      "seconds": 5.137036099971738,
+      "validation_macro_rmse": 0.03376764669793084,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.018433682712292458,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011737015685064007,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014598418572526164,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00935263475872751,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06827083880897392,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05067497621444248,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 20,
+      "train_rmse": 0.020702194824299785,
+      "seconds": 5.128718299994944,
+      "validation_macro_rmse": 0.03362935329702391,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01791273226051737,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.0112800659180701,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.014037428427234655,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008860657073157844,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06893789920331972,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05128674648964712,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 21,
+      "train_rmse": 0.0203863734387302,
+      "seconds": 5.149816299992381,
+      "validation_macro_rmse": 0.03379524722942121,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017841173479009702,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011207602705930773,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013991298722199938,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008793398802499361,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.069553269487054,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051819023088466164,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 22,
+      "train_rmse": 0.02048992367599976,
+      "seconds": 5.125062799983425,
+      "validation_macro_rmse": 0.03324841172500879,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.0177682175399007,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011165457825244838,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013811276741335591,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008697026586539732,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06816574089379009,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050891429059239095,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 23,
+      "train_rmse": 0.020413224422222334,
+      "seconds": 5.088391099998262,
+      "validation_macro_rmse": 0.03324948199365475,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017698328324144894,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011109467273585565,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013795128031330879,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008659626192491788,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06825498962548848,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05093854405051081,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 24,
+      "train_rmse": 0.020399168711933383,
+      "seconds": 5.130281799996737,
+      "validation_macro_rmse": 0.033211202614817054,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017642282443622186,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011080227536765621,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013656749900252192,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008590093126095343,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06833457550057678,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051100590025833385,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 25,
+      "train_rmse": 0.020264555748164603,
+      "seconds": 5.080040999979246,
+      "validation_macro_rmse": 0.03314659329417239,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017957615757517836,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011402555906043214,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013941283238068147,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008879106569630733,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06754088088693118,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05034277243067163,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 26,
+      "train_rmse": 0.02035457647667799,
+      "seconds": 5.070950299996184,
+      "validation_macro_rmse": 0.03301205095773207,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017778034670418597,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01123253733049385,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013518224204999697,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008513414018947767,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0677398939977779,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05055445809568116,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 27,
+      "train_rmse": 0.020181980797375633,
+      "seconds": 5.078025199996773,
+      "validation_macro_rmse": 0.03281383128246857,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017470511385983312,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010981815042740517,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013446919862863674,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0084721434620186,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06752406259855874,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050351795748572625,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 28,
+      "train_rmse": 0.020007251021066073,
+      "seconds": 5.085509600001387,
+      "validation_macro_rmse": 0.033037100008014936,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017510043264722473,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.011032228222321853,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013273002018939804,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00832030837182626,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06832825474038254,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05075785268160499,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 29,
+      "train_rmse": 0.020039223658805817,
+      "seconds": 5.012399600003846,
+      "validation_macro_rmse": 0.03292947629301766,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017318019390050343,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010853663359569499,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013349112870677355,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008363169995717708,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06812129661832529,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050718738924887916,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 30,
+      "train_rmse": 0.020067128111987437,
+      "seconds": 5.016818899981445,
+      "validation_macro_rmse": 0.033097407244631234,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017339890599519424,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010898412990697548,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013267959129489526,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008323352899959488,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06868437200488477,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.051193149588579415,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 31,
+      "train_rmse": 0.019947556100502244,
+      "seconds": 5.0383650999865495,
+      "validation_macro_rmse": 0.03303047865002399,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01786796371522862,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01141762843208071,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013996642654705243,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00902283753874979,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0672268295801381,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05017658091580621,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 32,
+      "train_rmse": 0.01988490805685779,
+      "seconds": 5.039901599986479,
+      "validation_macro_rmse": 0.032394957759858525,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01734244630187626,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010902885822566662,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013331735607044549,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008381364061440435,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06651069137065477,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04961689875382717,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 33,
+      "train_rmse": 0.019869163139486334,
+      "seconds": 5.115435899992008,
+      "validation_macro_rmse": 0.03273492602685392,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017293540393899534,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010889978825445285,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013232262855414706,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008373289181597812,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06767897483124752,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050429763927426347,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 34,
+      "train_rmse": 0.019876080572734846,
+      "seconds": 5.163170100015122,
+      "validation_macro_rmse": 0.032325007252391784,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017169173242692803,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010783304518918624,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012980258511137174,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008128724128735172,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06682559000334538,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04983221128921871,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 35,
+      "train_rmse": 0.019798486452622714,
+      "seconds": 5.0973311999987345,
+      "validation_macro_rmse": 0.03225342849836474,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.0171535999266892,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010770593040240252,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013124304834810264,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008270147620740825,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06648238073359475,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04962752384413662,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 36,
+      "train_rmse": 0.019694282258915462,
+      "seconds": 5.022836899996037,
+      "validation_macro_rmse": 0.03279830372500269,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017328625490449445,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01095676644297133,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013286483351572795,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008439803520946905,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06777980233298583,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05055043459594086,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 37,
+      "train_rmse": 0.019797326141476595,
+      "seconds": 5.036771100014448,
+      "validation_macro_rmse": 0.032415531000941286,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017067901795887932,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010675166140638659,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013116777985062722,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008206870457632827,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0670619132218732,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.049991446535338824,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 38,
+      "train_rmse": 0.01956225387041421,
+      "seconds": 5.060307500010822,
+      "validation_macro_rmse": 0.03248271356688581,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017044771873931504,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01069322148121659,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012961099650925447,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008133819843195448,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06744226917580048,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.05027376273607379,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 39,
+      "train_rmse": 0.01972118780092312,
+      "seconds": 5.161799599998631,
+      "validation_macro_rmse": 0.032023603206207625,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01703071034473532,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01068580753305318,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012845322031880668,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008048684000134303,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06619477724200688,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.049370954227995735,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 40,
+      "train_rmse": 0.01951188937129145,
+      "seconds": 5.13759110000683,
+      "validation_macro_rmse": 0.032079311126308435,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017072239407942256,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01072167173124298,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012891806010151446,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008122700435219597,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0662738879608316,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04952966699121118,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 41,
+      "train_rmse": 0.019503717386698552,
+      "seconds": 5.050312999985181,
+      "validation_macro_rmse": 0.03264883256973338,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01702747693983192,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010708951912915382,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012928643987666723,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008170616491833921,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0679903767817015,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050837853585919926,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 42,
+      "train_rmse": 0.019564469214188283,
+      "seconds": 5.025104200001806,
+      "validation_macro_rmse": 0.0321874119952449,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.017188966452121385,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010837395483809367,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.013183699358836532,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008371452144283526,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06618957017477678,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0493121768080929,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 43,
+      "train_rmse": 0.019499195881600925,
+      "seconds": 5.0364850999903865,
+      "validation_macro_rmse": 0.03208093479910716,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016936048968675902,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010598888002291513,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012787649899357996,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0080067202540313,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06651910552928758,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04954344604766777,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 44,
+      "train_rmse": 0.01940282074001354,
+      "seconds": 5.041508700000122,
+      "validation_macro_rmse": 0.03198370392887533,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016877891427844776,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01056188497866829,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012808968322106878,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008027411004830514,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06626425203667434,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.049434022109706946,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 45,
+      "train_rmse": 0.01935744287397647,
+      "seconds": 5.042124599975068,
+      "validation_macro_rmse": 0.032167483340731405,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016813820296718365,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010489594119279667,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012753640262791615,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007966023341244749,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06693498946268424,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0500298928868857,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 46,
+      "train_rmse": 0.01935756758627414,
+      "seconds": 5.037116599996807,
+      "validation_macro_rmse": 0.031783665902678206,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01679067838652915,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010484455042100032,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012723681513892438,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007954263206303006,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06583663780761302,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04918932467810782,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 47,
+      "train_rmse": 0.019326548657402652,
+      "seconds": 5.055296800012002,
+      "validation_macro_rmse": 0.03257758825864973,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016783618998610573,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.0104917930067927,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012643775544506554,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00793147052704119,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06830537023283206,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.050980125299485674,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 48,
+      "train_rmse": 0.019290542690316728,
+      "seconds": 5.036299400002463,
+      "validation_macro_rmse": 0.031744577412760065,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016880201437240554,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010567656015933844,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012778484141764183,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008023497840139499,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06557504665927547,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04900102489026181,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 49,
+      "train_rmse": 0.019262321927664156,
+      "seconds": 5.039965699979803,
+      "validation_macro_rmse": 0.03185169730620488,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016848791515676986,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010534646757662988,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01280045403198512,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008013818132755462,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06590584637095254,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.049159974105594695,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 50,
+      "train_rmse": 0.01923243763137522,
+      "seconds": 5.057729699998163,
+      "validation_macro_rmse": 0.03173212722886582,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01677913688114363,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01053023322996616,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012601887887406573,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007926772149303384,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06581535691804725,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04920412963165459,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 51,
+      "train_rmse": 0.019247148326335197,
+      "seconds": 5.040837099979399,
+      "validation_macro_rmse": 0.03169734645742705,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01668746406915699,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01041262101016355,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012533324124471036,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007815310598287963,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06587125117865311,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0492324504933337,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 52,
+      "train_rmse": 0.019137305218043875,
+      "seconds": 5.047656400012784,
+      "validation_macro_rmse": 0.03158983667442404,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016673892275153375,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010397670798981391,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012445211944982378,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007741132476397855,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06565040580313637,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.049022610680337725,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 53,
+      "train_rmse": 0.019208374191689203,
+      "seconds": 5.0469765000161715,
+      "validation_macro_rmse": 0.031612311741204026,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016677626574445253,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010417980624733873,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012574375796656868,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007884490189807924,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06558493285250996,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04891915143772651,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 54,
+      "train_rmse": 0.019070816957962193,
+      "seconds": 5.043935399997281,
+      "validation_macro_rmse": 0.03146677801630288,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.0166227234172432,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010364978447381186,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012425562830849326,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007768563330863768,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06535204780081613,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0487858191396975,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 55,
+      "train_rmse": 0.019095249674489653,
+      "seconds": 5.045632800000021,
+      "validation_macro_rmse": 0.03145712849341827,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016710230788199585,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01047570026366635,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012586742433353726,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007926462536272886,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0650744122587015,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048561448962710495,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 56,
+      "train_rmse": 0.01901017233265185,
+      "seconds": 5.080854699976044,
+      "validation_macro_rmse": 0.031309595584319845,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01663767193681662,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010376165623506276,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012260048723641252,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007659576964019939,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06503106609250166,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04853746814150955,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 57,
+      "train_rmse": 0.01900113148070165,
+      "seconds": 5.047229999996489,
+      "validation_macro_rmse": 0.03183127249105951,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016821805200852594,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.0105821568126854,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012746100113786558,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008125501573109406,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0659259121585394,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04929184573973694,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 58,
+      "train_rmse": 0.018981497785540168,
+      "seconds": 5.062973900028737,
+      "validation_macro_rmse": 0.03140886039316477,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016591767642737305,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010371034885975869,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012390899375535221,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00776819609540815,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06524391416122177,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04878397328768394,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 59,
+      "train_rmse": 0.019023791583539704,
+      "seconds": 5.050337599997874,
+      "validation_macro_rmse": 0.03135009141543348,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016531080075892185,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010313845278083194,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012403408317384353,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0077712629844824705,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0651157858530239,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04864804764385076,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 60,
+      "train_rmse": 0.018911162811595866,
+      "seconds": 5.04966400002013,
+      "validation_macro_rmse": 0.03142884898205358,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01652863017384861,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010321396367145014,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01227249175201654,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007675448071977737,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0654854250202956,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04887019059444123,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 61,
+      "train_rmse": 0.01891493454889355,
+      "seconds": 5.0436172999907285,
+      "validation_macro_rmse": 0.03140147898856533,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016457728764518374,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010247277271320146,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012310625763738875,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007682066910540824,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06543608243743874,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04884270494266082,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 62,
+      "train_rmse": 0.018913683663474644,
+      "seconds": 5.049496700026793,
+      "validation_macro_rmse": 0.031387673891880886,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016482043591150398,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01027837026352402,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012326829468540641,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007714879871520225,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06535414861595162,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0489164131696568,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 63,
+      "train_rmse": 0.018864039550449633,
+      "seconds": 5.046362199995201,
+      "validation_macro_rmse": 0.031142012906192677,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016395496910904576,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010198879506968832,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01217900481251232,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007610269368840765,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06485153699516114,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04839092122111074,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 64,
+      "train_rmse": 0.018868806549983134,
+      "seconds": 5.044037700019544,
+      "validation_macro_rmse": 0.031168142409073077,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016376916948357505,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010173080338769154,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012182254383627484,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007570938193533188,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06494525589523424,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04851620651965915,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 65,
+      "train_rmse": 0.018782008346254136,
+      "seconds": 5.045036800001981,
+      "validation_macro_rmse": 0.03125877784386402,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01640760037191219,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010222886577212252,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01222901542833226,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007630304772058759,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06513971773134761,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048713914813532946,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 66,
+      "train_rmse": 0.01880619176630551,
+      "seconds": 5.041352000000188,
+      "validation_macro_rmse": 0.031277751772464335,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016351165459698648,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010180265409892648,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012057060072360086,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007507313575802077,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06542502978533428,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04904698813089697,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 67,
+      "train_rmse": 0.01877893268546176,
+      "seconds": 5.0512357000261545,
+      "validation_macro_rmse": 0.03112021473216703,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016374321958474398,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010180709264557098,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012132440344147974,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007516776554064765,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06485388189387871,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0484130523765543,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 68,
+      "train_rmse": 0.018722640103997663,
+      "seconds": 5.057543300004909,
+      "validation_macro_rmse": 0.031042310513385216,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016340415794534255,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010175388568349838,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012104838208273589,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00756189577297026,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06468167753734781,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04828835058081183,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 69,
+      "train_rmse": 0.01874174888210187,
+      "seconds": 5.059988199995132,
+      "validation_macro_rmse": 0.031154162207416975,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016310895799922485,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010148382004267528,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012099932615564178,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00754448950040291,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06505165820676427,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04853833767510271,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 70,
+      "train_rmse": 0.018693224478041094,
+      "seconds": 5.052448300004471,
+      "validation_macro_rmse": 0.031058641513987194,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.0162856213546314,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010120646184191643,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012014273900984005,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00749834081817101,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06487602928634617,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04843947018006241,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 71,
+      "train_rmse": 0.018662599899168637,
+      "seconds": 5.042455799994059,
+      "validation_macro_rmse": 0.031215205960988205,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016415164582531262,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.01025860807473749,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012216260817012294,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007667190864461598,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06501419248342107,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0487345280989323,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 72,
+      "train_rmse": 0.01868020286105948,
+      "seconds": 5.041865300008794,
+      "validation_macro_rmse": 0.030897691914215406,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016230396614619752,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010071185577877647,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011993313785810537,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007455686463002756,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06446936534221594,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04815094901811656,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 73,
+      "train_rmse": 0.018633103207586415,
+      "seconds": 5.041140899993479,
+      "validation_macro_rmse": 0.03092657377344842,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01624143305031079,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010094544935364382,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01201783246750794,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007486820633327902,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06452045580252652,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04821747215173745,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 74,
+      "train_rmse": 0.018592232603213826,
+      "seconds": 5.054317900008755,
+      "validation_macro_rmse": 0.030848015893563157,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016259776032253502,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010100159372549997,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011883637741744408,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007392571846735771,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06440063390669155,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0481117971239612,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 75,
+      "train_rmse": 0.01860843455264739,
+      "seconds": 5.047165500000119,
+      "validation_macro_rmse": 0.030951889888483377,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016219960567262878,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010065080954642983,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011936559136997817,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007398078658497653,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06469914996118943,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04834142263994548,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 76,
+      "train_rmse": 0.018590819772633226,
+      "seconds": 5.04228970000986,
+      "validation_macro_rmse": 0.031214213741246253,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016637305567055106,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010521319071569462,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012520939071699305,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.008015755794304661,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06448439658498435,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04815151345220336,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 77,
+      "train_rmse": 0.018574401703963888,
+      "seconds": 5.041402900009416,
+      "validation_macro_rmse": 0.030899806222606564,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01624180834985132,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010099183633590358,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012016723743728277,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0075113944475512775,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0644408865742401,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048136464419051485,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 78,
+      "train_rmse": 0.01855512486161596,
+      "seconds": 5.042353299999377,
+      "validation_macro_rmse": 0.030944982236674124,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016316994670979655,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010193759888970729,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.012121537627307171,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.0076154450666672535,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06439641441173555,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048185471027262713,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 79,
+      "train_rmse": 0.018535043480389094,
+      "seconds": 5.04195900002378,
+      "validation_macro_rmse": 0.03078733149751679,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01614807241873091,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010006784953286104,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011907074291916528,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007382570485814494,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06430684778190292,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04802082026490448,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 80,
+      "train_rmse": 0.01851884132920412,
+      "seconds": 5.050719400023809,
+      "validation_macro_rmse": 0.030872558396713903,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016192670187471746,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010057675346128801,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011907715307131564,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007420916919677848,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0645172896955384,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04825453411427417,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 81,
+      "train_rmse": 0.018502050088737676,
+      "seconds": 5.064878600009251,
+      "validation_macro_rmse": 0.03076624470301485,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016219030411505585,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010088928644923384,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011866185100731407,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007365854822312394,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06421351859680756,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04797422775653743,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 82,
+      "train_rmse": 0.01848502626384242,
+      "seconds": 5.054259900003672,
+      "validation_macro_rmse": 0.030822386840559907,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016115909395812544,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009985451203934001,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01187519781573043,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007374721795491374,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06447605331013674,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048211095572054254,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 83,
+      "train_rmse": 0.018483012224327515,
+      "seconds": 5.055227800010471,
+      "validation_macro_rmse": 0.03075288716724647,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016163686543042628,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010031682512741502,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011898047322432898,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007416568576671745,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06419692763626388,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04792453467443686,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 84,
+      "train_rmse": 0.018471804646893034,
+      "seconds": 5.038191800005734,
+      "validation_macro_rmse": 0.030947170619666564,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016086773051227337,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009965300758144538,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01184807502118358,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007357239839738791,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06490666378658877,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04854461891119017,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 85,
+      "train_rmse": 0.018447875886023497,
+      "seconds": 5.05355569999665,
+      "validation_macro_rmse": 0.030669584590570714,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016083089712041778,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009963458622292913,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011793749410329636,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007308664135362267,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06413191464934073,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04795708497802307,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 86,
+      "train_rmse": 0.01842579628101992,
+      "seconds": 5.046769900014624,
+      "validation_macro_rmse": 0.030774864926225626,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016068254201410472,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009953974587865655,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011807416841940836,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007333404796607632,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06444892373532557,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04819505115176284,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 87,
+      "train_rmse": 0.01843966149559278,
+      "seconds": 5.037772399984533,
+      "validation_macro_rmse": 0.030764896174647973,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016128932752702246,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010021736091095954,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011856695194382651,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00739079931213617,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06430906057685902,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04809886090489097,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 88,
+      "train_rmse": 0.018420604189697563,
+      "seconds": 5.0428438000089955,
+      "validation_macro_rmse": 0.030775107857236625,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016185757883259946,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010088415293182036,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01198238989797747,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007514522399195501,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06415717579047246,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04795794688412858,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 89,
+      "train_rmse": 0.018395134302455082,
+      "seconds": 5.032926999992924,
+      "validation_macro_rmse": 0.03062662246401965,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016052174742736156,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009945560808422616,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01167708573073449,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007246499859091669,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0641506069185883,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04795159700065218,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 90,
+      "train_rmse": 0.018376139215641397,
+      "seconds": 5.0387629000179,
+      "validation_macro_rmse": 0.030635916984320378,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016063311094021666,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009963507733560587,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.01171793695091146,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007280165115941136,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06412650290802802,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04789511164079097,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 91,
+      "train_rmse": 0.0183868774559933,
+      "seconds": 5.024051900021732,
+      "validation_macro_rmse": 0.0306010989363996,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016021701671674,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009917958422734373,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011737380202431853,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007280794662436481,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06404421493509294,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04786776709753226,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 92,
+      "train_rmse": 0.018400053207867025,
+      "seconds": 5.046311800018884,
+      "validation_macro_rmse": 0.03083754894066641,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01610385552663226,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010003225776321267,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.0118414125689292,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.00736744674931087,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06456737872643777,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.048264728251530865,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 93,
+      "train_rmse": 0.018370043612358285,
+      "seconds": 5.047914099995978,
+      "validation_macro_rmse": 0.03077519588311228,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016289529102635533,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.010156942190885898,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011999834788955464,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007535619947115342,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06403622375774584,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04789391793897229,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 94,
+      "train_rmse": 0.018377277048772536,
+      "seconds": 5.056462700013071,
+      "validation_macro_rmse": 0.03056769620753762,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016012436230116233,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009918066838174333,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011702497232616101,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007250225535891994,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06398815515988053,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04784689066380866,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 95,
+      "train_rmse": 0.018364934649042663,
+      "seconds": 5.083183100010501,
+      "validation_macro_rmse": 0.030693261146891155,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.016017418540025873,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009912034491899643,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011763835240159946,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007306246573615796,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06429852966048766,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04809211820580011,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 96,
+      "train_rmse": 0.018337564839876242,
+      "seconds": 5.047530799987726,
+      "validation_macro_rmse": 0.03054675471746372,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.015998286371510562,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009900894573786845,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011670967591679035,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007234996014936283,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06397101018920155,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.0478203889579363,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 97,
+      "train_rmse": 0.018335217168126985,
+      "seconds": 5.042102699982934,
+      "validation_macro_rmse": 0.030526731984441627,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.015972899794277982,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009883985471663874,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011690728052272803,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007255005617068403,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.0639165681067741,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.047800999884306264,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 98,
+      "train_rmse": 0.018314277248227148,
+      "seconds": 5.045963900018251,
+      "validation_macro_rmse": 0.03053693201181006,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.015993188561105466,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009900345083565508,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011725451779143746,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007279139092759513,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06389215569518097,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04775229837560141,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 99,
+      "train_rmse": 0.01830651130764896,
+      "seconds": 5.038784799980931,
+      "validation_macro_rmse": 0.03060936521596862,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.01598256682591549,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009888853046929763,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011728467819887303,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007271609475865045,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06411706100210307,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.04796754226360402,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    },
+    {
+      "epoch": 100,
+      "train_rmse": 0.018316420822832517,
+      "seconds": 5.126072599989129,
+      "validation_macro_rmse": 0.03053163402993726,
+      "validation": {
+        "chemcam_single": {
+          "spectra": 46837,
+          "masked_bins": 8431110,
+          "rmse": 0.015997004830576603,
+          "linear_interpolation_rmse": 0.10397223142082496,
+          "mae": 0.009912558963173295,
+          "linear_interpolation_mae": 0.05922945273516773
+        },
+        "chemcam_stat": {
+          "spectra": 3150,
+          "masked_bins": 567745,
+          "rmse": 0.011729107139219794,
+          "linear_interpolation_rmse": 0.10419236734059734,
+          "mae": 0.007283109879875648,
+          "linear_interpolation_mae": 0.05974414129582823
+        },
+        "kepes": {
+          "spectra": 2500,
+          "masked_bins": 512128,
+          "rmse": 0.06386879012001538,
+          "linear_interpolation_rmse": 0.10705712002432018,
+          "mae": 0.047733694933200295,
+          "linear_interpolation_mae": 0.06935413668555518
+        }
+      }
+    }
+  ],
+  "test": {
+    "chemcam_single": {
+      "spectra": 44086,
+      "masked_bins": 7937722,
+      "rmse": 0.015782309991470296,
+      "linear_interpolation_rmse": 0.10400435629691515,
+      "mae": 0.009796177787216535,
+      "linear_interpolation_mae": 0.05918728162815478
+    },
+    "chemcam_stat": {
+      "spectra": 2966,
+      "masked_bins": 535007,
+      "rmse": 0.011608750036696569,
+      "linear_interpolation_rmse": 0.10371818027807808,
+      "mae": 0.007194960073244369,
+      "linear_interpolation_mae": 0.059265243842603926
+    },
+    "kepes": {
+      "spectra": 1000,
+      "masked_bins": 205176,
+      "rmse": 0.06288239948482678,
+      "linear_interpolation_rmse": 0.10593985626797624,
+      "mae": 0.047114680848698194,
+      "linear_interpolation_mae": 0.06834021271676512
+    }
+  },
+  "same_mask_test_comparison": {
+    "chemcam_single": {
+      "epoch_3_rmse": 0.020837217569351196,
+      "selected_epoch_rmse": 0.0157823096960783
+    },
+    "chemcam_stat": {
+      "epoch_3_rmse": 0.017344146966934204,
+      "selected_epoch_rmse": 0.011608749628067017
+    },
+    "kepes": {
+      "epoch_3_rmse": 0.07340997457504272,
+      "selected_epoch_rmse": 0.06288240104913712
+    }
+  },
+  "continuation_timing": {
+    "epochs": 97,
+    "median_seconds_per_epoch": 5.046362199995201,
+    "total_epoch_seconds": 490.2814446000557
+  },
+  "epoch_4_speed_comparison": {
+    "previous_batch_size": 512,
+    "previous_seconds": 7.406419900013134,
+    "accelerated_batch_size": 2048,
+    "accelerated_seconds": 5.016237699979683,
+    "speedup": 1.4764890228473684
+  }
+}

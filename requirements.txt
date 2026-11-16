@@ -5,3 +5,4 @@ matplotlib
 astroquery
 torch
 pytest
+scikit-learn

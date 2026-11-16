@@ -5,3 +5,13 @@ node_modules/
 checkpoints/*
 !checkpoints/spectral_net.pt
 !checkpoints/camera_net.pt
+!checkpoints/measured_libs.pt
+!checkpoints/measured_libs.json
+!checkpoints/measured_libs_100.pt
+!checkpoints/measured_libs_100.last.pt
+!checkpoints/measured_libs_100.json
+!checkpoints/superlibs_earth_2p4mj.joblib
+!checkpoints/superlibs_earth_2p4mj.json
+.venv/
+data/*
+!data/nist_lines.csv
