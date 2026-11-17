@@ -28,6 +28,10 @@ python tools/export_web.py   # data/nist_lines.csv + checkpoints/spectral_net.pt
 python tools/build_web.py    # web/ -> dist/spectra_lab.html (бір файл)
 ```
 
+### Vercel-ге орналастыру
+
+Сайт статикалық: `vercel.json` Vercel-ге `dist/` папкасын дайын шығыс ретінде береді (`/` → `dist/spectra_lab.html`), құрастыру мен орнату қадамдары жоқ. Бұл міндетті: репода `requirements.txt` бар, сондықтан Vercel жобаны Python қолданбасы деп қабылдап, `PYTHON_ENTRYPOINT_NOT_FOUND` қатесімен құлайтын (`framework: null` оны өшіреді). Жаңарту: `python tools/build_web.py`, `dist/` коммиттеп push жасаңыз, Vercel өзі жариялайды. HTTPS болғандықтан тікелей веб-камера да жұмыс істейді. Бір репоны бірнеше рет импорттасаңыз, артық жобалар пайда болады: біреуін қалдырып, қалғанын Vercel dashboard-тан жойыңыз.
+
 ## Камера және сурет арқылы спектр тану
 
 «Камера» бөлімі дифракциялық тор арқылы түсірілген спектр суретін (файл, телефон фотосы, тікелей веб-камера) талдайды. Қолмен нақты жұмыс ретімен:
