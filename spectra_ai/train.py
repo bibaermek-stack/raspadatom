@@ -3,6 +3,7 @@
   python -m spectra_ai.train --epochs 30                                  # лаборатория домені (200–900 нм)
   python -m spectra_ai.train --domain camera --epochs 30 --out checkpoints/camera_net.pt   # камера домені
   python -m spectra_ai.train --domain camera --epochs 8 --lr 1e-3 --init checkpoints/camera_net.pt   # жаңа домен/класқа дейін оқыту
+  python -m spectra_ai.train --epochs 20 --max-species 8 --seed 2 --init checkpoints/spectral_net.pt   # көп элементті қоспалар (k ≤ 8)
 """
 from __future__ import annotations
 
@@ -45,7 +46,8 @@ def load_init(model, species, path):
 def save(path, model, species, m, a, n_points, epoch):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     torch.save({"state_dict": model.state_dict(), "species": species, "metrics": m, "domain": a.domain,
-                "n_points": n_points, "num_layers": a.layers, "epoch": epoch}, path)
+                "n_points": n_points, "num_layers": a.layers, "epoch": epoch,
+                "max_species": 3 if a.domain == "camera" else a.max_species}, path)
 
 
 def unpack(batch):
@@ -97,15 +99,22 @@ def main():
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--out", default="checkpoints/spectral_net.pt")
     ap.add_argument("--init", default=None, help="бастапқы чекпойнт (fine-tune)")
+    ap.add_argument("--max-species", type=int, default=3,
+                    help="қоспадағы түрдің ең көп саны (лаб. домені). Нақты LIBS үлгілері көп элементті: 8 беріңіз")
+    ap.add_argument("--seed", type=int, default=1,
+                    help="оқыту деректерінің тұқымы (fine-tune кезінде басқасын беріңіз, валидация әрқашан 999)")
     a = ap.parse_args()
+    cam = a.domain == "camera"
+    if cam and a.max_species != 3:
+        ap.error("--max-species камера доменінде жұмыс істемейді: оның генераторы 1–3 түрге арналған")
 
     torch.manual_seed(0)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     db = load_database(a.data)
-    cam = a.domain == "camera"
     ds_cls, n_points, t_weight = (CameraSpectra, CAM_N, 2.0) if cam else (SyntheticSpectra, N_POINTS, 5.0)
-    train_ds = ds_cls(db, a.train_size, seed=1)
-    val_ds = ds_cls(db, a.val_size, seed=999)  # тұрақты валидация
+    kw = {} if cam else {"max_species": a.max_species}
+    train_ds = ds_cls(db, a.train_size, seed=a.seed, **kw)
+    val_ds = ds_cls(db, a.val_size, seed=999, **kw)  # тұрақты валидация
     species = train_ds.species
     print(f"Домен: {a.domain}, түрлер: {len(species)}, нүкте: {n_points}, құрылғы: {device}")
 

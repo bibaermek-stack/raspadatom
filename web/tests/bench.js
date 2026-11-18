@@ -1,5 +1,6 @@
 /* JS-құбырдың (генератор + модель) сапасы: оқыту таралымындағы кездейсоқ қоспаларда.
-   node web/tests/bench.js [N]  ->  JSON {f1, precision, recall, exact_match, T_MAE_K, n}
+   node web/tests/bench.js [N] [KMAX]  ->  JSON {f1, precision, recall, exact_match, T_MAE_K, n}
+   KMAX — қоспадағы түрдің ең көп саны (әдепкі 3; model.js ішіндегі `maxSpecies` — модель оқытылған мән).
    Нәтиже Python-дағы валидация метрикасына (model.js ішіндегі `metrics`) жақын болуы керек. */
 'use strict';
 const D = require('../data/lines.js');
@@ -7,7 +8,7 @@ const M = require('../data/model.js');
 const P = require('../js/physics.js');
 const AI = require('../js/ai.js');
 
-const N = +process.argv[2] || 300;
+const N = +process.argv[2] || 300, KMAX = +process.argv[3] || 3;
 const rng = P.mulberry32(20241114), gauss = P.gaussSource(rng);
 const U = (a, b) => a + (b - a) * rng();
 const model = new AI.Model(M);
@@ -15,7 +16,7 @@ const names = model.species, byName = Object.fromEntries(D.species.map(s => [s.n
 let tp = 0, fp = 0, fn = 0, exact = 0, tErr = 0;
 
 for (let n = 0; n < N; n++) {
-  const k = 1 + Math.floor(rng() * 3), chosen = [];
+  const k = 1 + Math.floor(rng() * KMAX), chosen = [];
   while (chosen.length < k) { const j = Math.floor(rng() * names.length); if (!chosen.includes(j)) chosen.push(j); }
   const sel = chosen.map(j => ({ sp: byName[names[j]], conc: Math.pow(10, U(-1, 0)) }));
   const T = U(P.T_MIN, P.T_MAX);

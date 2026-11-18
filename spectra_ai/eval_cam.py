@@ -10,6 +10,7 @@ import json
 import numpy as np
 import torch
 
+from .metrics import bootstrap, counts
 from .model import SpectralAttentionNet
 from .nist import load_database
 from .synth import GRID, N_POINTS
@@ -36,6 +37,7 @@ def main():
     ap.add_argument("--checkpoint", default="checkpoints/camera_net.pt")
     ap.add_argument("--baseline", default="checkpoints/spectral_net.pt")
     ap.add_argument("--previous", default=None, help="алдыңғы камера моделі (ортақ атомдық түрлер бойынша салыстыру)")
+    ap.add_argument("--n-boot", type=int, default=2000, help="bootstrap қайталау саны (ДИ үшін)")
     a = ap.parse_args()
 
     db = load_database()
@@ -72,6 +74,12 @@ def main():
            "empty_false_positive": round(float(((pc.sum(1) > 0) & ~has)[~has].mean()), 3)}
     if a.previous:
         out["previous_camera_model"] = agg(np.ones(a.n, bool), pp)
+    # 95 % ДИ (bootstrap, спектр бойынша); `--previous` берілсе, айырманың жұптасқан ДИ-ы да шығады
+    models = {"camera_model": counts(pc > 0, Y > 0)}
+    if a.previous:
+        models = {"previous_camera_model": counts(pp > 0, Y > 0), **models}
+    out["ci95"] = bootstrap(models, n_boot=a.n_boot)
+    out["exact_match"] = round(float(models["camera_model"]["exact"].mean()), 3)
     cfl = np.array([m["cfl"] for m in META])
     if "CFL" in species:
         j = species.index("CFL")

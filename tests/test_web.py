@@ -86,7 +86,8 @@ def test_js_pipeline_quality_matches_validation():
     """JS-генератор + JS-модель оқыту таралымында Python-валидациямен бірдей сапа беруі керек."""
     ck = torch.load(CKPT, map_location="cpu", weights_only=False)
     ref = ck["metrics"]["f1"]
-    r = subprocess.run(["node", str(ROOT / "web" / "tests" / "bench.js"), "200"], capture_output=True, text=True)
+    kmax = str(ck.get("max_species", 3))        # валидация модель оқытылған қоспа таралымында: JS-бенчмарк та сондай
+    r = subprocess.run(["node", str(ROOT / "web" / "tests" / "bench.js"), "200", kmax], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     js = json.loads(r.stdout.strip().splitlines()[-1])
     assert js["f1"] > 0.85 and abs(js["f1"] - ref) < 0.06, (js, ref)

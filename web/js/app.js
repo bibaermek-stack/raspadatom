@@ -366,13 +366,13 @@
       verdict = 'ЖИ-дің пікірі: <b>' + (predNames.join(', ') || 'сенімді түр жоқ') + '</b>. Жауап жасырын: өз болжамыңызды салыстырыңыз.';
     }
     var par = params(), tTrue = (!my || my.revealed) ? par.T : null;
-    var f1 = M.metrics && M.metrics.f1 ? ' Валидациядағы F1 = ' + M.metrics.f1.toFixed(2) + '.' : '';
+    var f1 = M.metrics && M.metrics.f1 ? ' Валидациядағы F1 = ' + M.metrics.f1.toFixed(2) + (M.maxSpecies ? ' (синтетикалық қоспалар, 1–' + M.maxSpecies + ' түр)' : '') + '.' : '';
     html(box,
       '<div class="ai-grid"><div><div class="bars">' + bars + '</div><p class="verdict" style="margin:14px 0 0">' + verdict + '</p></div>' +
       '<div><div class="tbox">' +
       '<div class="stat"><div class="k">T, ЖИ бағасы</div><div class="v">' + Math.round(res.tempK / 10) * 10 + '<small>K</small></div></div>' +
       '<div class="stat"><div class="k">T, шынайы</div><div class="v">' + (tTrue != null ? Math.round(tTrue) + '<small>K</small>' : '?') + '</div></div></div>' +
-      '<p class="note">Температура — Больцман бөлінуіне негізделген бағалау' + (M.metrics && M.metrics.T_MAE_K ? '; валидациядағы орташа қателік ≈ ' + Math.round(M.metrics.T_MAE_K / 10) * 10 + ' K' : '') + '.' + f1 + ' Модель синтетикалық спектрлерде оқытылған, нақты құралмен тексерілмеген. Есептеу уақыты: ' + res.ms.toFixed(0) + ' мс.</p></div></div>');
+      '<p class="note">Температура — Больцман бөлінуіне негізделген бағалау' + (M.metrics && M.metrics.T_MAE_K ? '; валидациядағы орташа қателік ≈ ' + Math.round(M.metrics.T_MAE_K / 10) * 10 + ' K' : '') + '.' + f1 + ' Модель синтетикалық спектрлерде оқытылған; нақты LIBS спектрінде дәлдігі әлдеқайда төмен (README, «Нақты LIBS-та тексеру»). Есептеу уақыты: ' + res.ms.toFixed(0) + ' мс.</p></div></div>');
   }
 
   // ================= басқару элементтері =================

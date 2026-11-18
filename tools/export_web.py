@@ -104,7 +104,7 @@ def export_model(ckpt_path: Path, out: Path, global_name: str = "SL_MODEL", extr
     meta = {
         "species": species, "tRange": [T_MIN, T_MAX], "nPoints": ck.get("n_points", N_POINTS),
         "dModel": 64, "heads": 4, "layers": len(model.attention.layers), "domain": ck.get("domain", "full"),
-        "ln_eps": 1e-5, "metrics": ck.get("metrics", {}),
+        "ln_eps": 1e-5, "metrics": ck.get("metrics", {}), "maxSpecies": ck.get("max_species", 3),   # валидация осы қоспа таралымында
         "tensors": manifest, "weights": base64.b64encode(b"".join(blobs)).decode("ascii"),
     }
     meta.update(extra or {})

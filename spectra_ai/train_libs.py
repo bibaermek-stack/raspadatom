@@ -17,6 +17,9 @@ OXIDES = tuple(f"{oxide} (wt %)" for oxide in (
     "SiO2", "TiO2", "Al2O3", "Fe2O3", "MgO", "CaO", "Na2O", "K2O",
 ))
 DEFAULT_MODEL = Path("checkpoints/superlibs_earth_2p4mj.joblib")
+# Тор екі жағынан да үздіктің сыртына шығуы керек: бұрын 10–1000 болатын, ал валидация α=1000-ға дейін монотонды жақсарып,
+# оптимум торға тірелген (шын оптимум ≈10 000)
+RIDGE_ALPHAS = (10, 100, 300, 1000, 3000, 10000, 30000, 100000)
 
 
 def read_spectra(path, labeled):
@@ -88,25 +91,35 @@ def errors(y, prediction):
     }
 
 
+def build(estimator):
+    return make_pipeline(StandardScaler(), TransformedTargetRegressor(
+        regressor=estimator, transformer=StandardScaler(),
+    ))
+
+
+def split_spread(x, y, alpha, seeds=range(10)):
+    """Таңдалған Ridge-ті басқа бөліну тұқымдарында қайта өлшеу: бір бөлінудің тест MAE-сі ± шамасыз берілмеуі үшін."""
+    maes = []
+    for seed in seeds:
+        fit, _, test = split_samples(y, seed)
+        maes.append(float(np.abs(predict(build(Ridge(alpha=alpha)).fit(x[fit], y[fit]), x[test]) - y[test]).mean()))
+    return {"seeds": list(seeds), "test_mae_mean": float(np.mean(maes)), "test_mae_std": float(np.std(maes, ddof=1)),
+            "test_mae_min": min(maes), "test_mae_max": max(maes)}
+
+
 def train(source, output, seed):
     wavelengths, x, y, names = read_spectra(source, labeled=True)
     fit, validation, test = split_samples(y, seed)
     print(f"Spectra: train={len(fit)}, validation={len(validation)}, test={len(test)}", flush=True)
     scores, best = {}, None
-    candidates = {
-        "ridge_10": Ridge(alpha=10),
-        "ridge_100": Ridge(alpha=100),
-        "ridge_1000": Ridge(alpha=1000),
-        "mlp_128_64": MLPRegressor(
-            hidden_layer_sizes=(128, 64), alpha=0.03, max_iter=250,
-            learning_rate_init=0.001, random_state=seed,
-        ),
-    }
+    candidates = {f"ridge_{alpha}": Ridge(alpha=alpha) for alpha in RIDGE_ALPHAS}
+    candidates["mlp_128_64"] = MLPRegressor(
+        hidden_layer_sizes=(128, 64), alpha=0.03, max_iter=250,
+        learning_rate_init=0.001, random_state=seed,
+    )
     with threadpool_limits(limits=4):
         for name, estimator in candidates.items():
-            model = make_pipeline(StandardScaler(), TransformedTargetRegressor(
-                regressor=estimator, transformer=StandardScaler(),
-            ))
+            model = build(estimator)
             model.fit(x[fit], y[fit])
             score = float(np.abs(predict(model, x[validation]) - y[validation]).mean())
             scores[name] = score
@@ -115,6 +128,10 @@ def train(source, output, seed):
                 best = name, model
         name, model = best
         test_prediction = predict(model, x[test])
+        on_edge = name in (f"ridge_{RIDGE_ALPHAS[0]}", f"ridge_{RIDGE_ALPHAS[-1]}")
+        if on_edge:
+            print(f"ЕСКЕРТУ: үздік модель {name} α торының шетінде: тордан тыс оптимум болуы мүмкін, торды кеңейтіңіз", flush=True)
+        spread = split_spread(x, y, int(name.split("_")[1])) if name.startswith("ridge_") else None
     report = {
         "source": source.name,
         "condition": "SuperLIBS 10K, Earth atmosphere, 2.4 mJ",
@@ -126,9 +143,12 @@ def train(source, output, seed):
         },
         "channels": len(wavelengths),
         "wavelength_range_nm": [float(wavelengths.min()), float(wavelengths.max())],
+        "ridge_alphas_searched": list(RIDGE_ALPHAS),
         "validation_mae_wt_pct_points": scores,
         "selected_model": name,
+        "selected_on_grid_edge": bool(on_edge),
         "test": errors(y[test], test_prediction),
+        "split_seed_spread": spread,
         "training_mean_baseline_test": errors(y[test], y[fit].mean(axis=0)),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
