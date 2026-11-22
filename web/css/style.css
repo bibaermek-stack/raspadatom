@@ -51,6 +51,7 @@ body {
 }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+button, label.btn { touch-action: manipulation; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
@@ -150,6 +151,8 @@ details > summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 #graph { height: 250px; margin-top: 6px; background: var(--graph-bg); border: 1px solid var(--line); cursor: crosshair; }
 .readout { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; min-height: 20px; font-size: 12.5px; color: var(--muted); }
 .readout b { color: var(--fg); font-weight: 600; }
+.graph-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+#graph, #strip, #camGraph { touch-action: pan-y; }
 .badge-mystery { color: var(--accent); font-weight: 600; }
 
 /* ---------- кесте ---------- */
@@ -192,7 +195,9 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 @media (min-width: 820px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: 1 / -1; } }
 @media (min-width: 1240px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: auto; } }
 .cam-stage { position: relative; background: #03060b; }
-.cam-stage canvas { touch-action: none; cursor: crosshair; display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
+.cam-stage canvas { touch-action: pan-y; cursor: crosshair; display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
+.cam-stage.is-drawing canvas { touch-action: none; outline: 2px solid var(--focus); outline-offset: -2px; }
+#camDrawRoi[aria-pressed=true] { border-color: var(--focus); color: var(--focus); }
 #camGraph { height: 270px; margin-top: 0; background: var(--graph-bg); border: 1px solid var(--line); border-radius: 6px; cursor: crosshair; display: block; width: 100%; }
 .cal-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; margin-top: 10px; }
 .num-in { width: 96px; margin-left: 6px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-2); color: var(--fg); font: 13px var(--font-mono); }
@@ -206,6 +211,23 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 .verify { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12.5px; }
 .verify b { font-weight: 600; }
 .cam-hint { color: var(--muted); font-size: 12.5px; padding: 6px 0; }
+.calibration-lines td { font-variant-numeric: tabular-nums; }
+.calibration-lines tr { cursor: auto; }
+
+/* ---------- өлшеулер ---------- */
+.measurement-layout { display: grid; gap: 12px; align-items: start; }
+@media (min-width: 820px) { .measurement-layout { grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); } }
+.measurement-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.measurement-controls .field { flex: 1 1 220px; margin: 0; }
+.field { display: grid; gap: 4px; margin: 8px 0; color: var(--muted); font-size: 12.5px; }
+.field :is(input, select) { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-2); color: var(--fg); }
+#measurementGraph { display: block; width: 100%; height: clamp(230px, 36vw, 380px); border: 1px solid var(--line); border-radius: 6px; background: var(--graph-bg); }
+#measurementStatus, #measurementSummary, #camProfileStatus, #camStatus { overflow-wrap: anywhere; }
+#measurementStatus:empty, #camProfileStatus:empty { display: none; }
+#measurementAnalysis:not(:empty) { margin-top: 12px; font-size: 13px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.measurement-controls label.btn { cursor: pointer; }
+.measurement-controls label.btn:has(+ input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* ---------- ЖИ ---------- */
 .ai-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
@@ -240,4 +262,8 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   .scene canvas { height: 330px; }
   #graph { height: 220px; }
   .panel .body, .spec-wrap { padding-left: 10px; padding-right: 10px; }
+}
+@media (pointer: coarse) {
+  .graph-tools .btn, #camDrawRoi, #viewSeg button, .measurement-layout .btn, #camSaveProfile, #camApplyProfile, #camDeleteProfile { min-height: 44px; }
+  .field :is(input, select) { min-height: 44px; font-size: 16px; }
 }

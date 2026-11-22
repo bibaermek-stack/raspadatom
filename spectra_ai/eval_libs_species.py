@@ -2,6 +2,7 @@
 
   python -m spectra_ai.eval_libs_species [--data data/zenodo.10K_EARTH.2.4mJ.csv]
          [--checkpoint checkpoints/spectral_net.pt ...] [--smooth-fwhm 1.3]
+         [--threshold 0.5] [--errors-csv libs-errors.csv]
 
 SuperLIBS пеллеттері көп элементті (орташа 6–7 оксид ≥ 1 wt %), әрі негізгі элементтердің резонанс сызықтары
 0.1 wt %-да да көрінеді (Ca II 393 нм — барлық спектрде). Сондықтан «≥ 1 wt % = бар, қалғаны = жоқ» деген
@@ -18,11 +19,13 @@ SuperLIBS пеллеттері көп элементті (орташа 6–7 о�
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
 import numpy as np
 import torch
+from scipy.special import expit
 
 from .eval_lab import load, predict
 from .nist import load_database
@@ -74,28 +77,67 @@ def _rate(flags):
 def detection_report(prob, species, oxide_wt, threshold: float = 0.5) -> dict:
     """prob: (N, түр) ықтималдықтар; oxide_wt: (N, 8) wt % (ELEMENTS тәртібімен)."""
     index = {s: i for i, s in enumerate(species)}
-    detected = np.asarray(prob) > threshold
-    elements, tp, fn = {}, 0, 0
+    prob = np.asarray(prob)
+    detected = prob > threshold
+    elements = {}
     for j, (el, names) in enumerate(ELEMENTS.items()):
-        found = detected[:, [index[s] for s in names]].any(axis=1)
+        element_prob = prob[:, [index[s] for s in names]].max(axis=1)
+        found = element_prob > threshold
         conc = oxide_wt[:, j]
-        hi, low = conc >= 1, conc < 1
-        tp, fn = tp + int((found & hi).sum()), fn + int((~found & hi).sum())
-        elements[el] = {"species": list(names), "n_ge_1wt": int(hi.sum()), "recall_ge_1wt": _rate(found[hi]),
-                        "n_ge_5wt": int((conc >= 5).sum()), "recall_ge_5wt": _rate(found[conc >= 5]),
-                        "n_below_1wt": int(low.sum()), "detected_below_1wt": _rate(found[low]),
-                        "mean_prob_ge_1wt": round(float(np.asarray(prob)[hi][:, [index[s] for s in names]].max(axis=1).mean()), 3) if hi.any() else None}
-    absent_cols = [index[s] for s in ABSENT if s in index]
+        high, low = conc >= 1, conc < 1
+        element = {"species": list(names),
+                   "n_below_1wt": int(low.sum()), "detected_below_1wt": _rate(found[low]),
+                   "mean_prob_ge_1wt": round(float(element_prob[high].mean()), 3) if high.any() else None}
+        for minimum in (1, 5):
+            qualified = found[conc >= minimum]
+            suffix = f"ge_{minimum}wt"
+            element[f"n_{suffix}"] = len(qualified)
+            element[f"n_detected_{suffix}"] = int(qualified.sum())
+            element[f"n_missed_{suffix}"] = int((~qualified).sum())
+            element[f"recall_{suffix}"] = _rate(qualified)
+            element[f"miss_rate_{suffix}"] = _rate(~qualified)
+        elements[el] = element
+    tp = sum(element["n_detected_ge_1wt"] for element in elements.values())
+    support = sum(element["n_ge_1wt"] for element in elements.values())
+    absent = {s: detected[:, index[s]] for s in ABSENT if s in index}
+    absent_cols = [index[s] for s in absent]
     known = {s for names in ELEMENTS.values() for s in names} | set(ABSENT)
     return {
         "elements": elements,
-        "micro_recall_ge_1wt": round(tp / max(tp + fn, 1), 4),
-        "false_alarm_absent": {s: _rate(detected[:, index[s]]) for s in ABSENT if s in index},
-        "false_alarm_any_absent": _rate(detected[:, absent_cols].any(axis=1)),
-        "mean_prob_absent": round(float(np.asarray(prob)[:, absent_cols].mean()), 4),
+        "micro_recall_ge_1wt": round(tp / max(support, 1), 4),
+        "false_alarm_absent": {s: _rate(flags) for s, flags in absent.items()},
+        "false_alarm_counts_absent": {s: int(flags.sum()) for s, flags in absent.items()},
+        "false_alarm_any_absent": _rate(detected[:, absent_cols].any(axis=1)) if absent else None,
+        "mean_prob_absent": round(float(prob[:, absent_cols].mean()), 4) if prob.size and absent else None,
         "other_species_detected_rate": {s: _rate(detected[:, i]) for s, i in index.items()
                                         if s not in known and detected[:, i].mean() > 0.05},
     }
+
+
+def write_error_csv(path: Path, report: dict) -> None:
+    """Save ranked misses by oxide threshold and false alarms for known-absent species."""
+    with path.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(["checkpoint", "probability_threshold", "error", "element", "species",
+                         "minimum_oxide_wt_pct", "evaluated_spectra", "error_count", "error_rate"])
+        for checkpoint, model in report["models"].items():
+            prefix = (checkpoint, report["threshold"])
+            for minimum in (1, 5):
+                suffix = f"ge_{minimum}wt"
+                ranked = sorted(model["elements"].items(), key=lambda item: (
+                    -item[1][f"n_missed_{suffix}"] / item[1][f"n_{suffix}"]
+                    if item[1][f"n_{suffix}"] else 1, item[0],
+                ))
+                for element, stats in ranked:
+                    writer.writerow([*prefix, "miss", element, "/".join(stats["species"]), minimum,
+                                     stats[f"n_{suffix}"], stats[f"n_missed_{suffix}"],
+                                     stats[f"miss_rate_{suffix}"]])
+            ranked = sorted(model["false_alarm_counts_absent"].items(),
+                            key=lambda item: (-item[1], item[0]))
+            for species, count in ranked:
+                element = species.split()[0]
+                writer.writerow([*prefix, "false_alarm", element, species, "", report["n_spectra"], count,
+                                 model["false_alarm_absent"][species]])
 
 
 def main():
@@ -103,17 +145,28 @@ def main():
     ap.add_argument("--data", type=Path, default=Path("data/zenodo.10K_EARTH.2.4mJ.csv"))
     ap.add_argument("--checkpoint", nargs="+", default=["checkpoints/spectral_net.pt"])
     ap.add_argument("--smooth-fwhm", type=float, default=DEFAULT_FWHM_NM, help="0 — тегістеусіз")
+    ap.add_argument("--threshold", type=float, default=0.5, help="анықтау үшін модель ықтималдығы осы шектен жоғары болуы керек")
+    ap.add_argument("--errors-csv", type=Path, help="әр элемент бойынша қателер кестесін сақтау")
     a = ap.parse_args()
+    if not 0.0 <= a.threshold <= 1.0:
+        ap.error("--threshold [0, 1] ауқымында болуы керек")
+    if not a.data.is_file():
+        ap.error(f"SuperLIBS CSV файлы табылмады: {a.data}")
+    if a.errors_csv is not None and a.errors_csv.resolve() in {a.data.resolve(), *(Path(p).resolve() for p in a.checkpoint)}:
+        ap.error("--errors-csv үшін кіріс файлдарынан бөлек жол көрсетіңіз")
 
     wl, spectra, oxides, _ = read_spectra(a.data, labeled=True)
     X = torch.from_numpy(rebin_to_grid(wl, spectra, smooth_fwhm_nm=a.smooth_fwhm or None))[:, None]
     species = sorted(load_database())
-    out = {"data": a.data.name, "n_spectra": len(X), "smooth_fwhm_nm": a.smooth_fwhm, "models": {}}
+    out = {"data": a.data.name, "n_spectra": len(X), "smooth_fwhm_nm": a.smooth_fwhm,
+           "threshold": a.threshold, "models": {}}
     for path in a.checkpoint:
         model, ck = load(path, species)
         logits, _ = predict(model, X)
         out["models"][path] = {"epoch": ck.get("epoch"), "max_species_trained": ck.get("max_species", 3),
-                               **detection_report(1.0 / (1.0 + np.exp(-logits)), species, oxides)}
+                               **detection_report(expit(logits), species, oxides, a.threshold)}
+    if a.errors_csv is not None:
+        write_error_csv(a.errors_csv, out)
     print(json.dumps(out, ensure_ascii=False, indent=1))
 
 

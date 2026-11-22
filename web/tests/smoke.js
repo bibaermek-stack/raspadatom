@@ -4,6 +4,7 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
 const file = process.argv[2] || path.join(__dirname, '..', 'index.html');
@@ -71,6 +72,18 @@ const check = (ok, msg) => { if (!ok) fail.push(msg); };
     camPainted.forEach(([id, n]) => check(n > 15, name + ': ' + id + ' бос (' + n + ')'));
     await page.click('#camAutoCal'); await page.waitForTimeout(300);
     check(/cfl/.test(await page.textContent('#camCalState')), name + ': CFL автокалибровкасы өтпеді: ' + await page.textContent('#camCalMsg'));
+    if (name === 'desktop') {
+      assert.ok(await page.locator('#camCalLines tr').count() >= 3);
+      await page.getByText('Калибровка профильдері', { exact: true }).click();
+      await page.fill('#camProfileName', 'CFL сынағы');
+      await page.click('#camSaveProfile');
+      assert.equal(await page.inputValue('#camProfiles'), 'CFL сынағы');
+      await page.click('#camClearCal');
+      assert.ok(await page.locator('#camCapture').isDisabled());
+      await page.click('#camApplyProfile');
+      assert.ok(await page.locator('#camCapture').isEnabled());
+      assert.match(await page.textContent('#camProfileStatus'), /қолданылды/);
+    }
     for (const i of [1, 2, 3, 8]) { await page.locator('#camSamples .chip').nth(i).click(); await page.waitForTimeout(250); }
     check(await page.locator('#camAiBody .bar').count() > 3, name + ': камера: үлгілерден кейін ЖИ жоқ');
     // қолмен ROI: суретте сызық сүйреу (автоматты табу сәтсіз болатын нақты фотолар үшін)
@@ -86,6 +99,29 @@ const check = (ok, msg) => { if (!ok) fail.push(msg); };
     check(/Тікелей камера/.test(await page.textContent('#camStatus')), name + ': тікелей камера іске қосылмады: ' + await page.textContent('#camStatus'));
     await page.click('#camLive'); await page.waitForTimeout(200);
     await page.click('[data-view=lab]'); await page.waitForTimeout(300);
+    if (name === 'desktop') {
+      await page.click('#labCapture');
+      await page.fill('#measurementName', 'Лаборатория үлгісі');
+      await page.click('#measurementSave');
+      const saved = await page.inputValue('#measurementHistory');
+      assert.ok(saved);
+      await page.locator('#measurementFile').setInputFiles({
+        name: 'outside-range.csv', mimeType: 'text/csv',
+        buffer: Buffer.from('wavelength_nm,intensity\n800,0\n810,1\n820,0\n')
+      });
+      await page.waitForFunction(() => document.querySelector('#measurementAnalysis').textContent.includes('Құрамы белгісіз'));
+      await page.selectOption('#measurementCompare', saved);
+      assert.match(await page.textContent('#measurementSummary'), /Үзік сызық.*Лаборатория үлгісі/);
+      const download = page.waitForEvent('download');
+      await page.click('#measurementExport');
+      assert.match(fs.readFileSync(await (await download).path(), 'utf8'), /^wavelength_nm,intensity,peak/);
+      await page.reload();
+      await page.selectOption('#measurementHistory', saved);
+      await page.click('#measurementOpen');
+      assert.equal(await page.inputValue('#measurementName'), 'Лаборатория үлгісі');
+      await page.click('#measurementRemove');
+      assert.equal(await page.locator('#measurementHistory option').count(), 1);
+    }
     check(errs.length === 0, name + ': консоль қателері: ' + errs.slice(0, 3).join(' | '));
     await page.close();
   }

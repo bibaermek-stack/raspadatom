@@ -20,6 +20,26 @@
     return b[clamp(Math.floor(p * (b.length - 1)), 0, b.length - 1)];
   }
 
+  function fitPolynomial(pts, deg) {
+    // ең кіші квадраттар: y = Σ c_k x^k, k=0..deg (қалыпты теңдеулер, Гаусс)
+    var m = deg + 1, A = [], v = [], r, c, k;
+    for (r = 0; r < m; r++) { A.push(new Array(m).fill(0)); v.push(0); }
+    pts.forEach(function (pt) {
+      var pw = [1]; for (k = 1; k <= 2 * deg; k++) pw.push(pw[k - 1] * pt.x);
+      for (r = 0; r < m; r++) { v[r] += pw[r] * pt.y; for (c = 0; c < m; c++) A[r][c] += pw[r + c]; }
+    });
+    for (r = 0; r < m; r++) {
+      var piv = r; for (c = r + 1; c < m; c++) if (Math.abs(A[c][r]) > Math.abs(A[piv][r])) piv = c;
+      if (Math.abs(A[piv][r]) < 1e-12) return null;
+      var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp; var tv = v[r]; v[r] = v[piv]; v[piv] = tv;
+      for (c = r + 1; c < m; c++) { var f = A[c][r] / A[r][r]; for (k = r; k < m; k++) A[c][k] -= f * A[r][k]; v[c] -= f * v[r]; }
+    }
+    var sol = new Array(m).fill(0);
+    for (r = m - 1; r >= 0; r--) { var acc = v[r]; for (c = r + 1; c < m; c++) acc -= A[r][c] * sol[c]; sol[r] = acc / A[r][r]; }
+    var ss = 0; pts.forEach(function (pt) { var e = sol.reduce(function (a2, cf, kk) { return a2 + cf * Math.pow(pt.x, kk); }, 0) - pt.y; ss += e * e; });
+    return { co: sol, rms: Math.sqrt(ss / pts.length) };
+  }
+
   // ---------- 1. жолақты табу ----------
   // кішірейтілген карталар: сызықтық жарықтық және хроматика (max−min): спектр түсті, ал шам жарқылы ақ
   function smallMaps(img, f) {
@@ -99,9 +119,11 @@
   }
 
   // шам жарқылы (нөлінші рет): өте жарық, ықшам дақ. -> [{cx, cy, r}] (кішірейтілген координата)
-  function findBlobs(Lf) {
+  function findBlobs(Lf, maps) {
     var w = Lf.w, h = Lf.h, mask = new Uint8Array(w * h), i, out = [];
-    for (i = 0; i < mask.length; i++) mask[i] = Lf.data[i] > 0.55 ? 1 : 0;
+    for (i = 0; i < mask.length; i++) {
+      if (Lf.data[i] > 0.55 && maps.chroma.data[i] < 0.22 * maps.luma.data[i]) mask[i] = 1;
+    }
     components(mask, w, h, 5).forEach(function (c) {
       var g = pca(c.idx, w, null);
       if (g.ratio < 2.2) out.push({ cx: g.cx, cy: g.cy, r: Math.max(2, 2 * Math.sqrt(g.l1)) });
@@ -109,22 +131,60 @@
     return out;
   }
 
+  // Fit the centers of longitudinal bins so that bright lines cannot outweigh a fainter part of the stripe.
+  function fitBandCurve(ts, ss, t0, t1, f) {
+    var center = (t1 + t0) / 2, scale = (t1 - t0) / 2, bins = [];
+    if (scale < 12) return null;
+    for (var i = 0; i < 12; i++) bins.push({ x: [], y: [] });
+    ts.forEach(function (t, j) {
+      if (t < t0 || t > t1) return;
+      var x = (t - center) / scale, bin = bins[Math.min(11, Math.floor(6 * (x + 1)))];
+      bin.x.push(x); bin.y.push(ss[j]);
+    });
+    var pts = bins.filter(function (bin) { return bin.x.length >= 5; }).map(function (bin) {
+      return { x: median(bin.x), y: median(bin.y) };
+    });
+    if (pts.length < 6 || pts[0].x > -0.55 || pts[pts.length - 1].x < 0.55) return null;
+    var quad = fitPolynomial(pts, 2);
+    if (!quad) return null;
+    // Reject isolated centers caused by colored clutter before fitting the final trace.
+    var errors = pts.map(function (p) { return Math.abs(p.y - (quad.co[0] + p.x * (quad.co[1] + p.x * quad.co[2]))); });
+    var limit = Math.max(1.5, 3 * median(errors));
+    pts = pts.filter(function (p, j) { return errors[j] <= limit; });
+    if (pts.length < 6 || pts[0].x > -0.55 || pts[pts.length - 1].x < 0.55) return null;
+    quad = fitPolynomial(pts, 2);
+    var lin = fitPolynomial(pts, 1);
+    if (!quad || !lin || quad.rms > 0.65 * lin.rms || Math.abs(quad.co[2]) < 2) return null;
+    if (Math.abs(quad.co[1]) + 2 * Math.abs(quad.co[2]) > scale) return null;
+    return { center: center * f, scale: scale * f, coefficients: quad.co.map(function (c) { return c * f; }) };
+  }
+
+  function bandOffset(roi, t) {
+    var curve = roi.curve;
+    if (!curve) return 0;
+    var x = clamp((t - curve.center) / curve.scale, -1, 1), c = curve.coefficients;
+    return c[0] + x * (c[1] + x * c[2]);
+  }
+
   // карта бойынша жолақ: -> roi немесе null
-  function detectOn(map, blobs, f, minThr, carve) {
+  function detectOn(map, blobs, f, minThr, chromaLuma) {
     var w = map.w, h = map.h, d = map.data, i;
     var med = median(d.slice(0, d.length)), dev = new Float32Array(d.length);
     for (i = 0; i < d.length; i++) dev[i] = Math.abs(d[i] - med);
     var floor = 1.4826 * median(dev), thr = Math.max(med + 8 * floor, minThr);
-    var mask = new Uint8Array(w * h), cnt = 0;
-    for (i = 0; i < d.length; i++) if (d[i] > thr) { mask[i] = 1; cnt++; }
-    if (carve) {
-      blobs.forEach(function (b) {
-        var r = 3.2 * b.r;
-        for (var y = Math.max(0, Math.floor(b.cy - r)); y <= Math.min(h - 1, Math.ceil(b.cy + r)); y++)
-          for (var x = Math.max(0, Math.floor(b.cx - r)); x <= Math.min(w - 1, Math.ceil(b.cx + r)); x++)
-            if ((x - b.cx) * (x - b.cx) + (y - b.cy) * (y - b.cy) <= r * r) mask[y * w + x] = 0;
-      });
-    }
+    var mask = new Uint8Array(w * h);
+    for (i = 0; i < d.length; i++) if (d[i] > thr) mask[i] = 1;
+    blobs.forEach(function (b) {
+      var r = 3.2 * b.r;
+      for (var y = Math.max(0, Math.floor(b.cy - r)); y <= Math.min(h - 1, Math.ceil(b.cy + r)); y++) {
+        for (var x = Math.max(0, Math.floor(b.cx - r)); x <= Math.min(w - 1, Math.ceil(b.cx + r)); x++) {
+          var p = y * w + x;
+          // Keep distinct color in the halo so nearby spectral lines still guide the fit.
+          if (chromaLuma && d[p] >= 0.22 * chromaLuma.data[p]) continue;
+          if ((x - b.cx) * (x - b.cx) + (y - b.cy) * (y - b.cy) <= r * r) mask[p] = 0;
+        }
+      }
+    });
     var comps = components(mask, w, h, 12), maxScore = 0;
     if (!comps.length) return null;
     comps.forEach(function (c) { c.g = pca(c.idx, w, null); c.score = c.n * Math.min(c.g.ratio, 12); if (c.score > maxScore) maxScore = c.score; });
@@ -149,33 +209,50 @@
         idx = keep; g = pca(idx, w, null);
       }
     }
-    var ct2 = Math.cos(g.theta), st2 = Math.sin(g.theta), ts = [];
-    for (i = 0; i < idx.length; i++) ts.push((idx[i] % w - g.cx) * ct2 + ((idx[i] / w) | 0) * st2 - g.cy * st2);
+    var ct2 = Math.cos(g.theta), st2 = Math.sin(g.theta), ts = [], ss = [];
+    for (i = 0; i < idx.length; i++) {
+      var dx2 = idx[i] % w - g.cx, dy2 = ((idx[i] / w) | 0) - g.cy;
+      ts.push(dx2 * ct2 + dy2 * st2); ss.push(-dx2 * st2 + dy2 * ct2);
+    }
     var t0 = percentile(ts, 0.005), t1 = percentile(ts, 0.995);
+    var roi = { cx: (g.cx + 0.5) * f, cy: (g.cy + 0.5) * f, theta: g.theta };
+    if (!single) {
+      var curve = fitBandCurve(ts, ss, t0, t1, f);
+      if (curve) roi.curve = curve;
+    }
+    var width = Math.sqrt(g.l2);
+    if (roi.curve) {
+      var offsets = ss.map(function (s, j) { return Math.abs(s - bandOffset(roi, ts[j] * f) / f); });
+      width = 1.48 * median(offsets);
+    }
     if (single) { t0 = -w * 0.42; t1 = w * 0.42; }
     var margin = Math.max(0.12 * (t1 - t0), 8), lo = t0 - margin, hi = t1 + margin;
     // жарқыл дақ жағына таралмау (ореолымен бірге)
     blobs.forEach(function (b) {
       var tb = (b.cx - g.cx) * ct2 + (b.cy - g.cy) * st2, sb = -(b.cx - g.cx) * st2 + (b.cy - g.cy) * ct2;
-      if (Math.abs(sb) > 4 * Math.sqrt(g.l2) + b.r) return;     // осьтен тыс
-      if (tb < t0) lo = Math.max(lo, tb + 3.4 * b.r); else if (tb > t1) hi = Math.min(hi, tb - 3.4 * b.r);
+      var separation = Math.abs(sb - bandOffset(roi, tb * f) / f);
+      var halo = 3.4 * b.r;
+      if (separation >= halo + 2 * width) return;     // осьтен тыс
+      var edge = Math.sqrt(Math.max(0, halo * halo - separation * separation));
+      if (tb < t0) lo = Math.max(lo, Math.min(t0, tb + edge));
+      else if (tb > t1) hi = Math.min(hi, Math.max(t1, tb - edge));
     });
     if (hi - lo < 16) { lo = t0; hi = t1; }
-    var hv = clamp(1.9 * Math.sqrt(g.l2), 2.5, h / 3);
-    return {
-      cx: (g.cx + 0.5) * f, cy: (g.cy + 0.5) * f, theta: g.theta, t0: lo * f, t1: hi * f, hv: hv * f,
-      info: { f: f, ratio: g.ratio, found: !single, single: single, blobs: blobs.length, thr: thr, floor: floor, components: comps.length }
-    };
+    roi.t0 = lo * f;
+    roi.t1 = hi * f;
+    roi.hv = clamp(1.9 * width, 2.5, h / 3) * f;
+    roi.info = { f: f, ratio: g.ratio, found: !single, single: single, blobs: blobs.length, thr: thr, floor: floor, components: comps.length };
+    return roi;
   }
 
   // -> roi {cx, cy, theta, t0, t1, hv} (толық ажыратымдылық пикселімен) немесе null; roi.info — диагностика
   // Алдымен хроматика бойынша (түсті жолақ, ақ жарқылсыз), болмаса жарықтық бойынша (жарқыл дақты кесіп тастап).
   function detectBand(img) {
     var f = Math.max(1, Math.ceil(Math.max(img.width, img.height) / 320)), m = smallMaps(img, f);
-    var Lf = flatten(m.luma), Cf = flatten(m.chroma), blobs = findBlobs(Lf);
-    var r1 = detectOn(Cf, blobs, f, 0.006, true);
+    var Lf = flatten(m.luma), Cf = flatten(m.chroma), blobs = findBlobs(Lf, m);
+    var r1 = detectOn(Cf, blobs, f, 0.006, m.luma);
     if (r1 && !r1.info.single) { r1.info.map = 'chroma'; return r1; }
-    var r2 = detectOn(Lf, blobs, f, 0.012, true);
+    var r2 = detectOn(Lf, blobs, f, 0.012, null);
     if (r2 && !r2.info.single) { r2.info.map = 'luma'; return r2; }
     var r = r1 || r2;
     if (r) r.info.map = r1 ? 'chroma' : 'luma';
@@ -223,13 +300,15 @@
     var M = Math.max(32, Math.round(roi.t1 - roi.t0)), ct = Math.cos(roi.theta), st = Math.sin(roi.theta);
     var hv = Math.max(2.5, roi.hv), wide = Math.ceil(2.2 * hv), core = Math.max(1, Math.round(0.6 * hv));
     var p = new Float32Array(M), bg = new Float32Array(M), R = new Float32Array(M), G = new Float32Array(M), B = new Float32Array(M), sat = new Float32Array(M), sc = new Float32Array(M);
-    var j, s, k;
+    var j, s, k, radius = roi.curve ? Math.ceil(hv) : wide;
     // 1) әр бағандағы центроид (қисық/бұрыш қатесін өтеу)
     for (j = 0; j < M; j++) {
       var t = roi.t0 + j * (roi.t1 - roi.t0) / (M - 1), sw = 0, ss = 0;
-      for (s = -wide; s <= wide; s++) {
-        if (!sample(img, roi.cx + t * ct - s * st, roi.cy + t * st + s * ct)) continue;
+      var center = bandOffset(roi, t);
+      for (s = -radius; s <= radius; s++) {
+        if (!sample(img, roi.cx + t * ct - (s + center) * st, roi.cy + t * st + (s + center) * ct)) continue;
         var v = (smp.r + smp.g + smp.b) / 3;
+        if (roi.curve) v = Math.max(smp.r, smp.g, smp.b) - Math.min(smp.r, smp.g, smp.b);
         sw += v; ss += v * s;
       }
       sc[j] = sw > 0 ? ss / sw : 0;
@@ -239,9 +318,10 @@
     // 2) ядро бойынша орташа, жақтан фон
     for (j = 0; j < M; j++) {
       var t2 = roi.t0 + j * (roi.t1 - roi.t0) / (M - 1), a = 0, an = 0, ar = 0, ag = 0, ab = 0, sa = 0, bgv = [];
+      var center2 = bandOffset(roi, t2);
       for (s = -wide - Math.ceil(hv); s <= wide + Math.ceil(hv); s++) {
         var os = s - scs[j];
-        if (!sample(img, roi.cx + t2 * ct - s * st, roi.cy + t2 * st + s * ct)) continue;
+        if (!sample(img, roi.cx + t2 * ct - (s + center2) * st, roi.cy + t2 * st + (s + center2) * ct)) continue;
         var vv = (smp.r + smp.g + smp.b) / 3;
         if (Math.abs(s - scs[j]) <= core) { a += vv; ar += smp.r; ag += smp.g; ab += smp.b; sa += smp.sat; an++; }
         else if (Math.abs(os) > 1.6 * hv && Math.abs(os) < 2.8 * hv + 4) bgv.push(vv);
@@ -425,31 +505,13 @@
     best.matched.forEach(function (m) { if (!one[m.bi] || m.d < one[m.bi].d) one[m.bi] = m; });
     var pts = Object.keys(one).map(function (k) { return one[k]; }), n = pts.length;
     if (n < 3) return null;
-    function lsq(deg) {
-      // ең кіші квадраттар: λ = Σ c_k x^k, k=0..deg (қалыпты теңдеулер, Гаусс)
-      var m = deg + 1, A = [], v = [], r, c, k;
-      for (r = 0; r < m; r++) { A.push(new Array(m).fill(0)); v.push(0); }
-      pts.forEach(function (pt) {
-        var pw = [1]; for (k = 1; k <= 2 * deg; k++) pw.push(pw[k - 1] * pt.x);
-        for (r = 0; r < m; r++) { v[r] += pw[r] * pt.wl; for (c = 0; c < m; c++) A[r][c] += pw[r + c]; }
-      });
-      for (r = 0; r < m; r++) {
-        var piv = r; for (c = r + 1; c < m; c++) if (Math.abs(A[c][r]) > Math.abs(A[piv][r])) piv = c;
-        if (Math.abs(A[piv][r]) < 1e-12) return null;
-        var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp; var tv = v[r]; v[r] = v[piv]; v[piv] = tv;
-        for (c = r + 1; c < m; c++) { var f = A[c][r] / A[r][r]; for (k = r; k < m; k++) A[c][k] -= f * A[r][k]; v[c] -= f * v[r]; }
-      }
-      var sol = new Array(m).fill(0);
-      for (r = m - 1; r >= 0; r--) { var acc = v[r]; for (c = r + 1; c < m; c++) acc -= A[r][c] * sol[c]; sol[r] = acc / A[r][r]; }
-      var ss = 0; pts.forEach(function (pt) { var e = sol.reduce(function (a2, cf, kk) { return a2 + cf * Math.pow(pt.x, kk); }, 0) - pt.wl; ss += e * e; });
-      return { co: sol, rms: Math.sqrt(ss / n) };
-    }
-    var lin = lsq(1);
+    var points = pts.map(function (pt) { return { x: pt.x, y: pt.wl }; });
+    var lin = fitPolynomial(points, 1);
     if (!lin) return null;
     if (n === 3 && lin.rms > 1.2) return null;      // 3 сәйкестік тек өте дәл болса ғана
     var cal = { a: lin.co[1], b: lin.co[0], rms: lin.rms, n: n, kind: 'cfl', matched: pts.map(function (m) { return { x: m.x, wl: m.wl, name: m.name }; }) };
     if (n >= 5) {                                   // жеткілікті сызық болса, нелинейлікті тексереміз
-      var quad = lsq(2);
+      var quad = fitPolynomial(points, 2);
       if (quad && quad.rms < 0.7 * lin.rms && Math.abs(quad.co[2]) * M * M < 40) {
         var q = { a: quad.co[1], b: quad.co[0], c: quad.co[2] };
         if (lam(q, 0) !== lam(q, M - 1) && (lam(q, M - 1) - lam(q, 0)) * (q.a) > 0 && Math.abs(2 * q.c * M) < Math.abs(q.a) * 0.9) { cal = { a: q.a, b: q.b, c: q.c, rms: quad.rms, n: n, kind: 'cfl', matched: cal.matched }; }
@@ -641,7 +703,7 @@
 
   return {
     WIN_LO: WIN_LO, WIN_HI: WIN_HI, WIN_N: WIN_N, WIN_DX: WIN_DX, CFL_REF: CFL_REF, CFL_SPECIES: CFL_SPECIES, PHOSPHOR: PHOSPHOR,
-    detectBand: detectBand, extractProfile: extractProfile, colorDirection: colorDirection,
+    detectBand: detectBand, bandOffset: bandOffset, extractProfile: extractProfile, colorDirection: colorDirection,
     findPeaks: findPeaks, gauss: gauss, calib2: calib2, autoCalibrateCFL: autoCalibrateCFL,
     lam: lam, idx: idx, disp: disp, localDisp: localDisp, hueLambda: hueLambda, hueMap: hueMap, calibrateByHue: calibrateByHue,
     toModelInput: toModelInput, lineness: lineness, narrowPeaks: narrowPeaks, assess: assess, perturbCal: perturbCal, predictTTA: predictTTA, estimateFwhm: estimateFwhm, verify: verify, downLuma: downLuma

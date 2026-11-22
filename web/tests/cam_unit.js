@@ -62,17 +62,17 @@ ok('toModelInput: шың дұрыс торға түседі, max=1', () => {
 });
 
 // сурет: айналған түсті жолақ + қаныққан ақ жарқыл
-function bandImage(W, H, thetaDeg, withBlob) {
+function bandImage(W, H, thetaDeg, withBlob, curvature = 0, blobGap = 50) {
   const d = new Uint8ClampedArray(W * H * 4), th = thetaDeg * Math.PI / 180, ct = Math.cos(th), st = Math.sin(th);
   const cx = W * 0.55, cy = H * 0.5, L = W * 0.55, sv = 6, rng = P.mulberry32(3), gs = P.gaussSource(rng);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const dx = x - cx, dy = y - cy, t = dx * ct + dy * st, s = -dx * st + dy * ct, tau = t / L + 0.5;
     let r = 0.02, g = 0.02, b = 0.02;
     if (tau >= 0 && tau <= 1) {
-      const v = Math.exp(-0.5 * (s / sv) ** 2) * (0.35 + 0.65 * Math.sin(tau * 14) ** 2);
+      const v = Math.exp(-0.5 * ((s - curvature * t * t) / sv) ** 2) * (0.35 + 0.65 * Math.sin(tau * 14) ** 2);
       r = 0.02 + v * (0.2 + 0.8 * tau); g = 0.02 + v * (1 - Math.abs(tau - 0.5) * 1.6); b = 0.02 + v * (1 - tau);
     }
-    if (withBlob) { const bx = cx - L / 2 * ct - 50 * ct, by = cy - L / 2 * st - 50 * st, d2 = (x - bx) ** 2 + (y - by) ** 2; const br = 3 * Math.exp(-d2 / (2 * 8 * 8)) + 0.25 * Math.exp(-Math.sqrt(d2) / 40); r += br; g += br; b += br; }
+    if (withBlob) { const bx = cx - (L / 2 + blobGap) * ct, by = cy - (L / 2 + blobGap) * st, d2 = (x - bx) ** 2 + (y - by) ** 2; const br = 3 * Math.exp(-d2 / (2 * 8 * 8)) + 0.25 * Math.exp(-Math.sqrt(d2) / 40); r += br; g += br; b += br; }
     const o = (y * W + x) * 4, q = v => Math.round(255 * Math.min(1, Math.max(0, v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055)));
     d[o] = q(r + 0.004 * gs()); d[o + 1] = q(g + 0.004 * gs()); d[o + 2] = q(b + 0.004 * gs()); d[o + 3] = 255;
   }
@@ -94,6 +94,35 @@ ok('extractProfile: толқындылық орны сақталады', () => {
   // sin(14τ)² -> 14·τ/π ≈ 4.46 период: тербеліс бар
   const y = C.gauss(pr.p, 1.5), pk = C.findPeaks(y, 0.1 * Math.max(...y), 8);
   assert(pk.length >= 3, 'шыңдар саны ' + pk.length);
+});
+
+ok('detectBand: ақ жарқыл жанындағы қисық жолақ', () => {
+  [0.0024, -0.0024].forEach(curvature => {
+    const theta = 11 * Math.PI / 180, ct = Math.cos(theta), st = Math.sin(theta);
+    const img = bandImage(480, 360, 11, true, curvature, 8);
+    const roi = C.detectBand(img);
+    assert(roi && roi.info.blobs > 0 && roi.curve, 'Ақ жарқыл мен иілген жолақ табылуы керек');
+    const rt = Math.cos(roi.theta), rs = Math.sin(roi.theta);
+    const toRoi = t => {
+      const s = curvature * t * t;
+      const dx = 480 * 0.55 + t * ct - s * st - roi.cx;
+      const dy = 360 * 0.5 + t * st + s * ct - roi.cy;
+      return { along: dx * rt + dy * rs, across: -dx * rs + dy * rt };
+    };
+    [-105, -60, 0, 60, 105].forEach(t => {
+      const { along, across } = toRoi(t);
+      assert(along > roi.t0 && along < roi.t1, 'Жолақтың шеті сақталуы керек');
+      assert(Math.abs(C.bandOffset(roi, along) - across) < 6, 'Жолақ ортасының ауытқуы 6 px-ден аз');
+    });
+    const profile = C.extractProfile(img, roi);
+    const smooth = C.gauss(profile.p, 1.5);
+    const peaks = C.findPeaks(smooth, 0.15 * Math.max(...smooth), 12);
+    for (let k = 0; k < 4; k++) {
+      const t = 480 * 0.55 * ((k + 0.5) * Math.PI / 14 - 0.5);
+      const expected = (toRoi(t).along - profile.t0) / profile.step;
+      assert(peaks.some(peak => Math.abs(peak.x - expected) < 5), 'Қисық жолақтағы спектр шыңы сақталуы керек');
+    }
+  });
 });
 
 ok('colorDirection: көк оң жақта болса flip', () => {
