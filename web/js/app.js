@@ -42,7 +42,7 @@
     mode: 'emission', range: 'full', scale: 'lin', scene: 'atom',
     sel: [{ name: 'H I', conc: 1 }],
     T: 9000, fwhm: 1.2, eta: 0.5, noise: 0.01, shift: 0, tau: 3, exposure: 1.4, seed: 11,
-    tr: null, mystery: null, ai: null, hover: null
+    tr: null, mystery: null, ai: null, hover: null, zoom: null
   };
   var cache = { spec: new Float32Array(P.N), clean: null, strengths: [], obs: null };
   var refLines = [];
@@ -66,7 +66,7 @@
 
   function compute() {
     var par = params(), truth = truthSel(), N = P.N, i;
-    if (!truth.length) { cache.spec = new Float32Array(N); cache.strengths = []; cache.obs = new Float64Array(N); return; }
+    if (!truth.length) { cache.spec = new Float32Array(N); cache.strengths = []; cache.obs = new Float64Array(N); cache.tr = null; return; }
     if (state.mode === 'emission') {
       var r = P.emissionClean(truth, par.T, par.fwhm, par.eta, par.shift);
       cache.clean = r.clean; cache.strengths = r.strengths; cache.obs = r.clean;
@@ -80,7 +80,15 @@
     }
   }
 
-  function view() { return state.range === 'vis' ? [380, 760] : [200, 900]; }
+  function fullView() { return state.range === 'vis' ? [380, 760] : [200, 900]; }
+  function view() { return state.zoom || fullView(); }
+  function setZoom(range) {
+    state.zoom = range;
+    state.hover = null; $('#readout').replaceChildren();
+    $('#labZoomIn').disabled = view()[1] - view()[0] <= 20;
+    $('#labZoomReset').disabled = !range;
+    buildRefLines(); ensureTransition(); renderTable(); drawStrip(); drawGraph();
+  }
   function maxIn(arr, lo, hi) {
     var a = Math.max(0, Math.floor(P.wlToIndex(lo))), b = Math.min(P.N - 1, Math.ceil(P.wlToIndex(hi))), m = 1e-9;
     for (var i = a; i <= b; i++) if (arr[i] > m) m = arr[i];
@@ -166,7 +174,7 @@
     }
     ctx.font = '11px "JetBrains Mono", ui-monospace, monospace'; ctx.lineWidth = 1;
     // тор
-    var xs = state.range === 'vis' ? 50 : 100;
+    var span = v[1] - v[0], xs = span > 400 ? 100 : span > 200 ? 50 : span > 80 ? 20 : span > 40 ? 10 : 5;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (var wl = Math.ceil(v[0] / xs) * xs; wl <= v[1]; wl += xs) {
       ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(X(wl), MT); ctx.lineTo(X(wl), bot); ctx.stroke();
@@ -175,8 +183,8 @@
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     var yt = log ? [0.001, 0.01, 0.1, 1] : [0, 0.25, 0.5, 0.75, 1];
     yt.forEach(function (t) {
-      ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t)); ctx.lineTo(W - MR, Y(t)); ctx.stroke();
-      ctx.fillStyle = th.axis; ctx.fillText(log ? (t >= 1 ? '1' : String(t)) : t.toFixed(2).replace(/0$/, ''), ML - 6, Y(t));
+      ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t * gmax)); ctx.lineTo(W - MR, Y(t * gmax)); ctx.stroke();
+      ctx.fillStyle = th.axis; ctx.fillText(log ? (t >= 1 ? '1' : String(t)) : t.toFixed(2).replace(/0$/, ''), ML - 6, Y(t * gmax));
     });
     ctx.save(); ctx.translate(10, MT + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillStyle = th.axis;
     ctx.fillText(state.range === 'vis' ? 'I (көрінетін max = 1)' : 'I, қатысты', 0, 0); ctx.restore();
@@ -184,7 +192,9 @@
     // көрінетін аймақтың кемпірқосақ жолағы
     var g = ctx.createLinearGradient(X(380), 0, X(760), 0);
     for (var s = 0; s <= 12; s++) { var w2 = 380 + (380 * s) / 12; g.addColorStop(s / 12, P.rgbCss(P.wlColor(w2), 1)); }
-    ctx.fillStyle = g; ctx.fillRect(Math.max(ML, X(380)), bot, Math.min(X(760), W - MR) - Math.max(ML, X(380)), 3);
+    if (v[1] > 380 && v[0] < 760) {
+      ctx.fillStyle = g; ctx.fillRect(Math.max(ML, X(380)), bot, Math.min(X(760), W - MR) - Math.max(ML, X(380)), 3);
+    }
 
     // иілік астындағы түсті бояу
     var i0 = Math.max(0, Math.floor(P.wlToIndex(v[0]))), i1 = Math.min(P.N - 2, Math.ceil(P.wlToIndex(v[1])));
@@ -521,12 +531,34 @@
       else if (id === 'bExit') exitMystery();
     });
     $$('#modeSeg button').forEach(function (b) { b.addEventListener('click', function () { if (state.mode === b.dataset.mode) return; state.mode = b.dataset.mode; refreshAll(); }); });
-    $$('#rangeSeg button').forEach(function (b) { b.addEventListener('click', function () { state.range = b.dataset.range; syncControls(); refreshSpectrum(false); }); });
+    $$('#rangeSeg button').forEach(function (b) { b.addEventListener('click', function () { state.range = b.dataset.range; syncControls(); setZoom(null); }); });
     $$('#scaleSeg button').forEach(function (b) { b.addEventListener('click', function () { state.scale = b.dataset.scale; syncControls(); drawGraph(); }); });
     $$('#sceneSeg button').forEach(function (b) { b.addEventListener('click', function () { setScene(b.dataset.scene); }); });
     $('#linesTable tbody').addEventListener('click', function (e) {
       var tr = e.target.closest('tr'); if (!tr || tr.dataset.k == null) return;
       selectTransition(species[+tr.dataset.k], +tr.dataset.i);
+    });
+    $('#labZoomIn').addEventListener('click', function () {
+      var v = view(), width = Math.max(20, (v[1] - v[0]) / 2);
+      var center = state.tr ? state.tr.sp.wl[state.tr.i] : (v[0] + v[1]) / 2;
+      var lo = Math.max(v[0], Math.min(v[1] - width, center - width / 2));
+      setZoom([lo, lo + width]);
+    });
+    $('#labZoomReset').addEventListener('click', function () { setZoom(null); });
+    $('#labCapture').addEventListener('click', function () {
+      var spectrum = cache.spec;
+      var name = state.mystery ? 'Белгісіз қоспа' : state.sel.map(function (s) { return sname(byName[s.name]); }).join(' + ') || 'Зертхана спектрі';
+      var wavelengths = Array.from(spectrum, function (_, i) { return P.indexToWl(i); });
+      var signal = state.mode === 'emission' ? spectrum : cache.tr && Float32Array.from(cache.tr, function (t) { return 1 - t; });
+      var peaks = [];
+      if (signal) {
+        var smoothed = SL.camera.gauss(signal, 0.8);
+        peaks = SL.camera.findPeaks(smoothed, 0.12 * maxOf(smoothed), 4).map(function (p) {
+          var wavelength = P.indexToWl(p.x);
+          return { wavelength: wavelength, intensity: specAt(wavelength, spectrum) };
+        });
+      }
+      SL.measurementPanel.capture({ name: name, source: 'lab', wavelengths: wavelengths, intensity: spectrum, peaks: peaks });
     });
 
     // спектр бойынша меңзер / басу
@@ -560,6 +592,7 @@
     function onClick(cv, left, right) {
       return function (e) {
         var wl = wlFrom(e, cv, left, right); if (wl == null) return;
+        onMove(cv, left, right)(e);
         var c = candidatesAt(wl); if (!c.length) return;
         if (!state.sel.some(function (s) { return s.name === c[0].sp.name; }) && state.mystery) { /* гипотезаға қоспаймыз: тек атомды көрсетеміз */ }
         selectTransition(c[0].sp, c[0].i);
@@ -567,7 +600,10 @@
     }
     var strip = $('#strip'), graph = $('#graph');
     strip.addEventListener('pointermove', onMove(strip, 0, 0)); graph.addEventListener('pointermove', onMove(graph, ML, MR));
-    [strip, graph].forEach(function (cv) { cv.addEventListener('pointerleave', function () { state.hover = null; $('#readout').innerHTML = ''; redrawSoon(); }); });
+    [strip, graph].forEach(function (cv) { cv.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'touch') return;
+      state.hover = null; $('#readout').innerHTML = ''; redrawSoon();
+    }); });
     strip.addEventListener('click', onClick(strip, 0, 0)); graph.addEventListener('click', onClick(graph, ML, MR));
 
     // 3D басқаруы

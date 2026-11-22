@@ -16,6 +16,7 @@
     <div class="seg" id="viewSeg" role="group" aria-label="Бөлім">
       <button type="button" data-view="lab" aria-pressed="true">Зертхана</button>
       <button type="button" data-view="cam" aria-pressed="false">Камера</button>
+      <button type="button" data-view="measure" aria-pressed="false">Өлшеулер</button>
     </div>
     <span class="sub"><b>NIST ASD</b> сызықтары · <b id="nSpecies">29</b> түр · 1D-CNN + Attention браузерде жұмыс істейді</span>
   </header>
@@ -98,6 +99,11 @@
         <div class="spec-wrap">
           <canvas id="strip" aria-label="Спектрлік жолақ"></canvas>
           <canvas id="graph" aria-label="Интенсивтілік графигі"></canvas>
+          <div class="graph-tools" aria-label="Спектр графигін басқару" role="group">
+            <button class="btn small" id="labZoomIn" type="button" aria-label="Спектр графигін үлкейту">Үлкейту</button>
+            <button class="btn small" id="labZoomReset" type="button" disabled>Толық аралық</button>
+            <button class="btn small" id="labCapture" type="button">Өлшеулерге ашу</button>
+          </div>
           <div class="readout" id="readout"></div>
         </div>
       </section>
@@ -194,13 +200,14 @@
             </div>
             <div class="sec">
               <span class="lbl">Жолақ (ROI)</span>
-              <span class="hint" style="display:block;margin:2px 0 8px">Автоматты табу сәтсіз болса, суретте спектр жолағы бойымен тінтуірмен (саусақпен) сызық сүйреңіз.</span>
+              <span class="hint" style="display:block;margin:2px 0 8px">Қолмен белгілеу үшін «Жолақты сызу» түймесін басып, суреттегі жолақтың бойымен сызық сүйреңіз.</span>
               <div class="ctl"><label for="camAngle">Бұрыш</label><output id="camAngleO"></output><input id="camAngle" type="range" min="-90" max="90" step="0.1" value="0"></div>
               <div class="ctl"><label for="camThick">Қалыңдық</label><output id="camThickO"></output><input id="camThick" type="range" min="3" max="120" step="1" value="12"></div>
               <div class="ctl"><label for="camStart">Басы</label><output id="camStartO"></output><input id="camStart" type="range" min="0" max="100" step="1" value="0"></div>
               <div class="ctl"><label for="camEnd">Соңы</label><output id="camEndO"></output><input id="camEnd" type="range" min="0" max="100" step="1" value="100"></div>
               <div class="row" style="margin-top:10px">
                 <button class="btn small" id="camAuto" type="button">Автоматты табу</button>
+                <button class="btn small" id="camDrawRoi" type="button" aria-pressed="false">Жолақты сызу</button>
                 <label class="hint"><input id="camLock" type="checkbox"> ROI бекіту</label>
                 <label class="hint"><input id="camFlip" type="checkbox"> Көк жағы оң жақта</label>
               </div>
@@ -214,6 +221,13 @@
           <header><h2 id="h-prof">Алынған спектр</h2><span class="hint grow" id="camCalState"></span></header>
           <div class="spec-wrap">
             <canvas id="camGraph" aria-label="Спектр профилі"></canvas>
+            <div class="graph-tools" aria-label="Камера графигін басқару" role="group">
+              <button class="btn small" id="camPrevPeak" type="button" aria-label="Алдыңғы шың">← Шың</button>
+              <button class="btn small" id="camNextPeak" type="button" aria-label="Келесі шың">Шың →</button>
+              <button class="btn small" id="camZoomIn" type="button" aria-label="Камера графигін үлкейту">Үлкейту</button>
+              <button class="btn small" id="camZoomReset" type="button" disabled>Толық аралық</button>
+              <button class="btn small" id="camCapture" type="button" title="Алдымен CFL немесе екі нүкте бойынша калибровка жасаңыз" disabled>Өлшеулерге ашу</button>
+            </div>
             <div class="readout" id="camReadout"></div>
           </div>
           <div class="body" style="padding-top:0">
@@ -224,6 +238,16 @@
                 <button class="btn small ghost" id="camClearCal" type="button">Тазалау</button>
               </div>
               <p class="hint" id="camCalMsg" style="margin:8px 0 0"></p>
+              <details class="sec" id="camCalDetails" hidden>
+                <summary>Калибровка сапасы</summary>
+                <p class="hint" id="camCalQuality"></p>
+                <div class="table-wrap">
+                  <table class="lines calibration-lines">
+                    <thead><tr><th>Сызық</th><th>Эталон, нм</th><th>Есептелген, нм</th><th>Ауытқу, нм</th></tr></thead>
+                    <tbody id="camCalLines"></tbody>
+                  </table>
+                </div>
+              </details>
               <details style="margin-top:12px">
                 <summary>Қолмен калибровка: екі белгілі сызық</summary>
                 <div class="cal-grid">
@@ -241,6 +265,22 @@
                 </div>
                 <p class="hint" id="camPickMsg" style="margin:8px 0 0"></p>
               </details>
+              <details class="sec">
+                <summary>Калибровка профильдері</summary>
+                <p class="hint">Профильді камера, тор және кадр геометриясы бірдей болғанда қолданыңыз.</p>
+                <label class="field" for="camProfileName">Профиль атауы
+                  <input id="camProfileName" type="text" maxlength="80" placeholder="Мысалы, артқы камера">
+                </label>
+                <button class="btn small" id="camSaveProfile" type="button" disabled>Профильді сақтау</button>
+                <label class="field" for="camProfiles">Сақталған профиль
+                  <select id="camProfiles"><option value="">Профиль таңдаңыз</option></select>
+                </label>
+                <div class="row">
+                  <button class="btn small" id="camApplyProfile" type="button" disabled>Қолдану</button>
+                  <button class="btn small ghost" id="camDeleteProfile" type="button" disabled>Өшіру</button>
+                </div>
+                <p class="hint" id="camProfileStatus" role="status"></p>
+              </details>
             </div>
           </div>
         </section>
@@ -255,6 +295,45 @@
     </main>
     <p class="footer" id="camFooter"></p>
   </div>
+
+  <main id="viewMeasure" class="measurement-layout" hidden>
+    <section class="panel" aria-labelledby="h-measurement">
+      <header><h2 id="h-measurement">Өлшеу және салыстыру</h2></header>
+      <div class="body">
+        <div class="measurement-controls">
+          <label class="field" for="measurementName">Өлшеу атауы
+            <input id="measurementName" type="text" maxlength="120" placeholder="Мысалы, неон шамы">
+          </label>
+          <div class="row">
+            <label class="btn small" for="measurementFile">CSV импорттау</label>
+            <input id="measurementFile" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" class="visually-hidden">
+            <button id="measurementSave" class="btn small primary" type="button" disabled>Тарихқа сақтау</button>
+            <button id="measurementExport" class="btn small" type="button" disabled>CSV жүктеу</button>
+          </div>
+        </div>
+        <p id="measurementStatus" class="hint" role="status"></p>
+        <p id="measurementSummary" class="hint"></p>
+        <canvas id="measurementGraph" role="img" aria-label="Таңдалған спектр мен салыстыру спектрінің графигі" aria-describedby="measurementSummary"></canvas>
+        <div id="measurementAnalysis" aria-live="polite"></div>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="h-history">
+      <header><h2 id="h-history">Өлшеу тарихы</h2></header>
+      <div class="body">
+        <label class="field" for="measurementHistory">Сақталған өлшеу
+          <select id="measurementHistory"><option value="">Өлшеу таңдаңыз</option></select>
+        </label>
+        <div class="row">
+          <button id="measurementOpen" class="btn small" type="button" disabled>Ашу</button>
+          <button id="measurementRemove" class="btn small ghost" type="button" disabled>Өшіру</button>
+        </div>
+        <label class="field" for="measurementCompare">Салыстырылатын өлшеу
+          <select id="measurementCompare"><option value="">Салыстыру өшірулі</option></select>
+        </label>
+        <p class="hint">Тарих осы браузерде сақталады. Графикте әр спектр өз қарқындылығының ең үлкен абсолют мәніне бөлінеді.</p>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script src="data/lines.js"></script>
@@ -268,6 +347,10 @@
 <script src="js/levels.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/camsim.js"></script>
+<script src="js/calibration.js"></script>
+<script src="js/measurements.js"></script>
+<script src="js/spectrum-confidence.js"></script>
+<script src="js/measurement-panel.js"></script>
 <script src="js/app.js"></script>
 <script src="js/campanel.js"></script>
 </body>

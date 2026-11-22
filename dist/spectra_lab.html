@@ -59,6 +59,7 @@ body {
 }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+button, label.btn { touch-action: manipulation; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
@@ -158,6 +159,8 @@ details > summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 #graph { height: 250px; margin-top: 6px; background: var(--graph-bg); border: 1px solid var(--line); cursor: crosshair; }
 .readout { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; min-height: 20px; font-size: 12.5px; color: var(--muted); }
 .readout b { color: var(--fg); font-weight: 600; }
+.graph-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+#graph, #strip, #camGraph { touch-action: pan-y; }
 .badge-mystery { color: var(--accent); font-weight: 600; }
 
 /* ---------- кесте ---------- */
@@ -200,7 +203,9 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 @media (min-width: 820px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: 1 / -1; } }
 @media (min-width: 1240px) { .cam-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); } .cam-layout > .col:last-child { grid-column: auto; } }
 .cam-stage { position: relative; background: #03060b; }
-.cam-stage canvas { touch-action: none; cursor: crosshair; display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
+.cam-stage canvas { touch-action: pan-y; cursor: crosshair; display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #03060b; }
+.cam-stage.is-drawing canvas { touch-action: none; outline: 2px solid var(--focus); outline-offset: -2px; }
+#camDrawRoi[aria-pressed=true] { border-color: var(--focus); color: var(--focus); }
 #camGraph { height: 270px; margin-top: 0; background: var(--graph-bg); border: 1px solid var(--line); border-radius: 6px; cursor: crosshair; display: block; width: 100%; }
 .cal-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; margin-top: 10px; }
 .num-in { width: 96px; margin-left: 6px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-2); color: var(--fg); font: 13px var(--font-mono); }
@@ -214,6 +219,23 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 .verify { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12.5px; }
 .verify b { font-weight: 600; }
 .cam-hint { color: var(--muted); font-size: 12.5px; padding: 6px 0; }
+.calibration-lines td { font-variant-numeric: tabular-nums; }
+.calibration-lines tr { cursor: auto; }
+
+/* ---------- өлшеулер ---------- */
+.measurement-layout { display: grid; gap: 12px; align-items: start; }
+@media (min-width: 820px) { .measurement-layout { grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); } }
+.measurement-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.measurement-controls .field { flex: 1 1 220px; margin: 0; }
+.field { display: grid; gap: 4px; margin: 8px 0; color: var(--muted); font-size: 12.5px; }
+.field :is(input, select) { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-2); color: var(--fg); }
+#measurementGraph { display: block; width: 100%; height: clamp(230px, 36vw, 380px); border: 1px solid var(--line); border-radius: 6px; background: var(--graph-bg); }
+#measurementStatus, #measurementSummary, #camProfileStatus, #camStatus { overflow-wrap: anywhere; }
+#measurementStatus:empty, #camProfileStatus:empty { display: none; }
+#measurementAnalysis:not(:empty) { margin-top: 12px; font-size: 13px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.measurement-controls label.btn { cursor: pointer; }
+.measurement-controls label.btn:has(+ input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* ---------- ЖИ ---------- */
 .ai-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
@@ -249,6 +271,10 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   #graph { height: 220px; }
   .panel .body, .spec-wrap { padding-left: 10px; padding-right: 10px; }
 }
+@media (pointer: coarse) {
+  .graph-tools .btn, #camDrawRoi, #viewSeg button, .measurement-layout .btn, #camSaveProfile, #camApplyProfile, #camDeleteProfile { min-height: 44px; }
+  .field :is(input, select) { min-height: 44px; font-size: 16px; }
+}
 
 </style>
 </head>
@@ -259,6 +285,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     <div class="seg" id="viewSeg" role="group" aria-label="Бөлім">
       <button type="button" data-view="lab" aria-pressed="true">Зертхана</button>
       <button type="button" data-view="cam" aria-pressed="false">Камера</button>
+      <button type="button" data-view="measure" aria-pressed="false">Өлшеулер</button>
     </div>
     <span class="sub"><b>NIST ASD</b> сызықтары · <b id="nSpecies">29</b> түр · 1D-CNN + Attention браузерде жұмыс істейді</span>
   </header>
@@ -341,6 +368,11 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
         <div class="spec-wrap">
           <canvas id="strip" aria-label="Спектрлік жолақ"></canvas>
           <canvas id="graph" aria-label="Интенсивтілік графигі"></canvas>
+          <div class="graph-tools" aria-label="Спектр графигін басқару" role="group">
+            <button class="btn small" id="labZoomIn" type="button" aria-label="Спектр графигін үлкейту">Үлкейту</button>
+            <button class="btn small" id="labZoomReset" type="button" disabled>Толық аралық</button>
+            <button class="btn small" id="labCapture" type="button">Өлшеулерге ашу</button>
+          </div>
           <div class="readout" id="readout"></div>
         </div>
       </section>
@@ -437,13 +469,14 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
             </div>
             <div class="sec">
               <span class="lbl">Жолақ (ROI)</span>
-              <span class="hint" style="display:block;margin:2px 0 8px">Автоматты табу сәтсіз болса, суретте спектр жолағы бойымен тінтуірмен (саусақпен) сызық сүйреңіз.</span>
+              <span class="hint" style="display:block;margin:2px 0 8px">Қолмен белгілеу үшін «Жолақты сызу» түймесін басып, суреттегі жолақтың бойымен сызық сүйреңіз.</span>
               <div class="ctl"><label for="camAngle">Бұрыш</label><output id="camAngleO"></output><input id="camAngle" type="range" min="-90" max="90" step="0.1" value="0"></div>
               <div class="ctl"><label for="camThick">Қалыңдық</label><output id="camThickO"></output><input id="camThick" type="range" min="3" max="120" step="1" value="12"></div>
               <div class="ctl"><label for="camStart">Басы</label><output id="camStartO"></output><input id="camStart" type="range" min="0" max="100" step="1" value="0"></div>
               <div class="ctl"><label for="camEnd">Соңы</label><output id="camEndO"></output><input id="camEnd" type="range" min="0" max="100" step="1" value="100"></div>
               <div class="row" style="margin-top:10px">
                 <button class="btn small" id="camAuto" type="button">Автоматты табу</button>
+                <button class="btn small" id="camDrawRoi" type="button" aria-pressed="false">Жолақты сызу</button>
                 <label class="hint"><input id="camLock" type="checkbox"> ROI бекіту</label>
                 <label class="hint"><input id="camFlip" type="checkbox"> Көк жағы оң жақта</label>
               </div>
@@ -457,6 +490,13 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
           <header><h2 id="h-prof">Алынған спектр</h2><span class="hint grow" id="camCalState"></span></header>
           <div class="spec-wrap">
             <canvas id="camGraph" aria-label="Спектр профилі"></canvas>
+            <div class="graph-tools" aria-label="Камера графигін басқару" role="group">
+              <button class="btn small" id="camPrevPeak" type="button" aria-label="Алдыңғы шың">← Шың</button>
+              <button class="btn small" id="camNextPeak" type="button" aria-label="Келесі шың">Шың →</button>
+              <button class="btn small" id="camZoomIn" type="button" aria-label="Камера графигін үлкейту">Үлкейту</button>
+              <button class="btn small" id="camZoomReset" type="button" disabled>Толық аралық</button>
+              <button class="btn small" id="camCapture" type="button" title="Алдымен CFL немесе екі нүкте бойынша калибровка жасаңыз" disabled>Өлшеулерге ашу</button>
+            </div>
             <div class="readout" id="camReadout"></div>
           </div>
           <div class="body" style="padding-top:0">
@@ -467,6 +507,16 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
                 <button class="btn small ghost" id="camClearCal" type="button">Тазалау</button>
               </div>
               <p class="hint" id="camCalMsg" style="margin:8px 0 0"></p>
+              <details class="sec" id="camCalDetails" hidden>
+                <summary>Калибровка сапасы</summary>
+                <p class="hint" id="camCalQuality"></p>
+                <div class="table-wrap">
+                  <table class="lines calibration-lines">
+                    <thead><tr><th>Сызық</th><th>Эталон, нм</th><th>Есептелген, нм</th><th>Ауытқу, нм</th></tr></thead>
+                    <tbody id="camCalLines"></tbody>
+                  </table>
+                </div>
+              </details>
               <details style="margin-top:12px">
                 <summary>Қолмен калибровка: екі белгілі сызық</summary>
                 <div class="cal-grid">
@@ -484,6 +534,22 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
                 </div>
                 <p class="hint" id="camPickMsg" style="margin:8px 0 0"></p>
               </details>
+              <details class="sec">
+                <summary>Калибровка профильдері</summary>
+                <p class="hint">Профильді камера, тор және кадр геометриясы бірдей болғанда қолданыңыз.</p>
+                <label class="field" for="camProfileName">Профиль атауы
+                  <input id="camProfileName" type="text" maxlength="80" placeholder="Мысалы, артқы камера">
+                </label>
+                <button class="btn small" id="camSaveProfile" type="button" disabled>Профильді сақтау</button>
+                <label class="field" for="camProfiles">Сақталған профиль
+                  <select id="camProfiles"><option value="">Профиль таңдаңыз</option></select>
+                </label>
+                <div class="row">
+                  <button class="btn small" id="camApplyProfile" type="button" disabled>Қолдану</button>
+                  <button class="btn small ghost" id="camDeleteProfile" type="button" disabled>Өшіру</button>
+                </div>
+                <p class="hint" id="camProfileStatus" role="status"></p>
+              </details>
             </div>
           </div>
         </section>
@@ -498,6 +564,45 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     </main>
     <p class="footer" id="camFooter"></p>
   </div>
+
+  <main id="viewMeasure" class="measurement-layout" hidden>
+    <section class="panel" aria-labelledby="h-measurement">
+      <header><h2 id="h-measurement">Өлшеу және салыстыру</h2></header>
+      <div class="body">
+        <div class="measurement-controls">
+          <label class="field" for="measurementName">Өлшеу атауы
+            <input id="measurementName" type="text" maxlength="120" placeholder="Мысалы, неон шамы">
+          </label>
+          <div class="row">
+            <label class="btn small" for="measurementFile">CSV импорттау</label>
+            <input id="measurementFile" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" class="visually-hidden">
+            <button id="measurementSave" class="btn small primary" type="button" disabled>Тарихқа сақтау</button>
+            <button id="measurementExport" class="btn small" type="button" disabled>CSV жүктеу</button>
+          </div>
+        </div>
+        <p id="measurementStatus" class="hint" role="status"></p>
+        <p id="measurementSummary" class="hint"></p>
+        <canvas id="measurementGraph" role="img" aria-label="Таңдалған спектр мен салыстыру спектрінің графигі" aria-describedby="measurementSummary"></canvas>
+        <div id="measurementAnalysis" aria-live="polite"></div>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="h-history">
+      <header><h2 id="h-history">Өлшеу тарихы</h2></header>
+      <div class="body">
+        <label class="field" for="measurementHistory">Сақталған өлшеу
+          <select id="measurementHistory"><option value="">Өлшеу таңдаңыз</option></select>
+        </label>
+        <div class="row">
+          <button id="measurementOpen" class="btn small" type="button" disabled>Ашу</button>
+          <button id="measurementRemove" class="btn small ghost" type="button" disabled>Өшіру</button>
+        </div>
+        <label class="field" for="measurementCompare">Салыстырылатын өлшеу
+          <select id="measurementCompare"><option value="">Салыстыру өшірулі</option></select>
+        </label>
+        <p class="hint">Тарих осы браузерде сақталады. Графикте әр спектр өз қарқындылығының ең үлкен абсолют мәніне бөлінеді.</p>
+      </div>
+    </section>
+  </main>
 </div>
 <script>
 /* data/lines.js */
@@ -1870,6 +1975,26 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     return b[clamp(Math.floor(p * (b.length - 1)), 0, b.length - 1)];
   }
 
+  function fitPolynomial(pts, deg) {
+    // ең кіші квадраттар: y = Σ c_k x^k, k=0..deg (қалыпты теңдеулер, Гаусс)
+    var m = deg + 1, A = [], v = [], r, c, k;
+    for (r = 0; r < m; r++) { A.push(new Array(m).fill(0)); v.push(0); }
+    pts.forEach(function (pt) {
+      var pw = [1]; for (k = 1; k <= 2 * deg; k++) pw.push(pw[k - 1] * pt.x);
+      for (r = 0; r < m; r++) { v[r] += pw[r] * pt.y; for (c = 0; c < m; c++) A[r][c] += pw[r + c]; }
+    });
+    for (r = 0; r < m; r++) {
+      var piv = r; for (c = r + 1; c < m; c++) if (Math.abs(A[c][r]) > Math.abs(A[piv][r])) piv = c;
+      if (Math.abs(A[piv][r]) < 1e-12) return null;
+      var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp; var tv = v[r]; v[r] = v[piv]; v[piv] = tv;
+      for (c = r + 1; c < m; c++) { var f = A[c][r] / A[r][r]; for (k = r; k < m; k++) A[c][k] -= f * A[r][k]; v[c] -= f * v[r]; }
+    }
+    var sol = new Array(m).fill(0);
+    for (r = m - 1; r >= 0; r--) { var acc = v[r]; for (c = r + 1; c < m; c++) acc -= A[r][c] * sol[c]; sol[r] = acc / A[r][r]; }
+    var ss = 0; pts.forEach(function (pt) { var e = sol.reduce(function (a2, cf, kk) { return a2 + cf * Math.pow(pt.x, kk); }, 0) - pt.y; ss += e * e; });
+    return { co: sol, rms: Math.sqrt(ss / pts.length) };
+  }
+
   // ---------- 1. жолақты табу ----------
   // кішірейтілген карталар: сызықтық жарықтық және хроматика (max−min): спектр түсті, ал шам жарқылы ақ
   function smallMaps(img, f) {
@@ -1949,9 +2074,11 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   }
 
   // шам жарқылы (нөлінші рет): өте жарық, ықшам дақ. -> [{cx, cy, r}] (кішірейтілген координата)
-  function findBlobs(Lf) {
+  function findBlobs(Lf, maps) {
     var w = Lf.w, h = Lf.h, mask = new Uint8Array(w * h), i, out = [];
-    for (i = 0; i < mask.length; i++) mask[i] = Lf.data[i] > 0.55 ? 1 : 0;
+    for (i = 0; i < mask.length; i++) {
+      if (Lf.data[i] > 0.55 && maps.chroma.data[i] < 0.22 * maps.luma.data[i]) mask[i] = 1;
+    }
     components(mask, w, h, 5).forEach(function (c) {
       var g = pca(c.idx, w, null);
       if (g.ratio < 2.2) out.push({ cx: g.cx, cy: g.cy, r: Math.max(2, 2 * Math.sqrt(g.l1)) });
@@ -1959,22 +2086,60 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     return out;
   }
 
+  // Fit the centers of longitudinal bins so that bright lines cannot outweigh a fainter part of the stripe.
+  function fitBandCurve(ts, ss, t0, t1, f) {
+    var center = (t1 + t0) / 2, scale = (t1 - t0) / 2, bins = [];
+    if (scale < 12) return null;
+    for (var i = 0; i < 12; i++) bins.push({ x: [], y: [] });
+    ts.forEach(function (t, j) {
+      if (t < t0 || t > t1) return;
+      var x = (t - center) / scale, bin = bins[Math.min(11, Math.floor(6 * (x + 1)))];
+      bin.x.push(x); bin.y.push(ss[j]);
+    });
+    var pts = bins.filter(function (bin) { return bin.x.length >= 5; }).map(function (bin) {
+      return { x: median(bin.x), y: median(bin.y) };
+    });
+    if (pts.length < 6 || pts[0].x > -0.55 || pts[pts.length - 1].x < 0.55) return null;
+    var quad = fitPolynomial(pts, 2);
+    if (!quad) return null;
+    // Reject isolated centers caused by colored clutter before fitting the final trace.
+    var errors = pts.map(function (p) { return Math.abs(p.y - (quad.co[0] + p.x * (quad.co[1] + p.x * quad.co[2]))); });
+    var limit = Math.max(1.5, 3 * median(errors));
+    pts = pts.filter(function (p, j) { return errors[j] <= limit; });
+    if (pts.length < 6 || pts[0].x > -0.55 || pts[pts.length - 1].x < 0.55) return null;
+    quad = fitPolynomial(pts, 2);
+    var lin = fitPolynomial(pts, 1);
+    if (!quad || !lin || quad.rms > 0.65 * lin.rms || Math.abs(quad.co[2]) < 2) return null;
+    if (Math.abs(quad.co[1]) + 2 * Math.abs(quad.co[2]) > scale) return null;
+    return { center: center * f, scale: scale * f, coefficients: quad.co.map(function (c) { return c * f; }) };
+  }
+
+  function bandOffset(roi, t) {
+    var curve = roi.curve;
+    if (!curve) return 0;
+    var x = clamp((t - curve.center) / curve.scale, -1, 1), c = curve.coefficients;
+    return c[0] + x * (c[1] + x * c[2]);
+  }
+
   // карта бойынша жолақ: -> roi немесе null
-  function detectOn(map, blobs, f, minThr, carve) {
+  function detectOn(map, blobs, f, minThr, chromaLuma) {
     var w = map.w, h = map.h, d = map.data, i;
     var med = median(d.slice(0, d.length)), dev = new Float32Array(d.length);
     for (i = 0; i < d.length; i++) dev[i] = Math.abs(d[i] - med);
     var floor = 1.4826 * median(dev), thr = Math.max(med + 8 * floor, minThr);
-    var mask = new Uint8Array(w * h), cnt = 0;
-    for (i = 0; i < d.length; i++) if (d[i] > thr) { mask[i] = 1; cnt++; }
-    if (carve) {
-      blobs.forEach(function (b) {
-        var r = 3.2 * b.r;
-        for (var y = Math.max(0, Math.floor(b.cy - r)); y <= Math.min(h - 1, Math.ceil(b.cy + r)); y++)
-          for (var x = Math.max(0, Math.floor(b.cx - r)); x <= Math.min(w - 1, Math.ceil(b.cx + r)); x++)
-            if ((x - b.cx) * (x - b.cx) + (y - b.cy) * (y - b.cy) <= r * r) mask[y * w + x] = 0;
-      });
-    }
+    var mask = new Uint8Array(w * h);
+    for (i = 0; i < d.length; i++) if (d[i] > thr) mask[i] = 1;
+    blobs.forEach(function (b) {
+      var r = 3.2 * b.r;
+      for (var y = Math.max(0, Math.floor(b.cy - r)); y <= Math.min(h - 1, Math.ceil(b.cy + r)); y++) {
+        for (var x = Math.max(0, Math.floor(b.cx - r)); x <= Math.min(w - 1, Math.ceil(b.cx + r)); x++) {
+          var p = y * w + x;
+          // Keep distinct color in the halo so nearby spectral lines still guide the fit.
+          if (chromaLuma && d[p] >= 0.22 * chromaLuma.data[p]) continue;
+          if ((x - b.cx) * (x - b.cx) + (y - b.cy) * (y - b.cy) <= r * r) mask[p] = 0;
+        }
+      }
+    });
     var comps = components(mask, w, h, 12), maxScore = 0;
     if (!comps.length) return null;
     comps.forEach(function (c) { c.g = pca(c.idx, w, null); c.score = c.n * Math.min(c.g.ratio, 12); if (c.score > maxScore) maxScore = c.score; });
@@ -1999,33 +2164,50 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
         idx = keep; g = pca(idx, w, null);
       }
     }
-    var ct2 = Math.cos(g.theta), st2 = Math.sin(g.theta), ts = [];
-    for (i = 0; i < idx.length; i++) ts.push((idx[i] % w - g.cx) * ct2 + ((idx[i] / w) | 0) * st2 - g.cy * st2);
+    var ct2 = Math.cos(g.theta), st2 = Math.sin(g.theta), ts = [], ss = [];
+    for (i = 0; i < idx.length; i++) {
+      var dx2 = idx[i] % w - g.cx, dy2 = ((idx[i] / w) | 0) - g.cy;
+      ts.push(dx2 * ct2 + dy2 * st2); ss.push(-dx2 * st2 + dy2 * ct2);
+    }
     var t0 = percentile(ts, 0.005), t1 = percentile(ts, 0.995);
+    var roi = { cx: (g.cx + 0.5) * f, cy: (g.cy + 0.5) * f, theta: g.theta };
+    if (!single) {
+      var curve = fitBandCurve(ts, ss, t0, t1, f);
+      if (curve) roi.curve = curve;
+    }
+    var width = Math.sqrt(g.l2);
+    if (roi.curve) {
+      var offsets = ss.map(function (s, j) { return Math.abs(s - bandOffset(roi, ts[j] * f) / f); });
+      width = 1.48 * median(offsets);
+    }
     if (single) { t0 = -w * 0.42; t1 = w * 0.42; }
     var margin = Math.max(0.12 * (t1 - t0), 8), lo = t0 - margin, hi = t1 + margin;
     // жарқыл дақ жағына таралмау (ореолымен бірге)
     blobs.forEach(function (b) {
       var tb = (b.cx - g.cx) * ct2 + (b.cy - g.cy) * st2, sb = -(b.cx - g.cx) * st2 + (b.cy - g.cy) * ct2;
-      if (Math.abs(sb) > 4 * Math.sqrt(g.l2) + b.r) return;     // осьтен тыс
-      if (tb < t0) lo = Math.max(lo, tb + 3.4 * b.r); else if (tb > t1) hi = Math.min(hi, tb - 3.4 * b.r);
+      var separation = Math.abs(sb - bandOffset(roi, tb * f) / f);
+      var halo = 3.4 * b.r;
+      if (separation >= halo + 2 * width) return;     // осьтен тыс
+      var edge = Math.sqrt(Math.max(0, halo * halo - separation * separation));
+      if (tb < t0) lo = Math.max(lo, Math.min(t0, tb + edge));
+      else if (tb > t1) hi = Math.min(hi, Math.max(t1, tb - edge));
     });
     if (hi - lo < 16) { lo = t0; hi = t1; }
-    var hv = clamp(1.9 * Math.sqrt(g.l2), 2.5, h / 3);
-    return {
-      cx: (g.cx + 0.5) * f, cy: (g.cy + 0.5) * f, theta: g.theta, t0: lo * f, t1: hi * f, hv: hv * f,
-      info: { f: f, ratio: g.ratio, found: !single, single: single, blobs: blobs.length, thr: thr, floor: floor, components: comps.length }
-    };
+    roi.t0 = lo * f;
+    roi.t1 = hi * f;
+    roi.hv = clamp(1.9 * width, 2.5, h / 3) * f;
+    roi.info = { f: f, ratio: g.ratio, found: !single, single: single, blobs: blobs.length, thr: thr, floor: floor, components: comps.length };
+    return roi;
   }
 
   // -> roi {cx, cy, theta, t0, t1, hv} (толық ажыратымдылық пикселімен) немесе null; roi.info — диагностика
   // Алдымен хроматика бойынша (түсті жолақ, ақ жарқылсыз), болмаса жарықтық бойынша (жарқыл дақты кесіп тастап).
   function detectBand(img) {
     var f = Math.max(1, Math.ceil(Math.max(img.width, img.height) / 320)), m = smallMaps(img, f);
-    var Lf = flatten(m.luma), Cf = flatten(m.chroma), blobs = findBlobs(Lf);
-    var r1 = detectOn(Cf, blobs, f, 0.006, true);
+    var Lf = flatten(m.luma), Cf = flatten(m.chroma), blobs = findBlobs(Lf, m);
+    var r1 = detectOn(Cf, blobs, f, 0.006, m.luma);
     if (r1 && !r1.info.single) { r1.info.map = 'chroma'; return r1; }
-    var r2 = detectOn(Lf, blobs, f, 0.012, true);
+    var r2 = detectOn(Lf, blobs, f, 0.012, null);
     if (r2 && !r2.info.single) { r2.info.map = 'luma'; return r2; }
     var r = r1 || r2;
     if (r) r.info.map = r1 ? 'chroma' : 'luma';
@@ -2073,13 +2255,15 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     var M = Math.max(32, Math.round(roi.t1 - roi.t0)), ct = Math.cos(roi.theta), st = Math.sin(roi.theta);
     var hv = Math.max(2.5, roi.hv), wide = Math.ceil(2.2 * hv), core = Math.max(1, Math.round(0.6 * hv));
     var p = new Float32Array(M), bg = new Float32Array(M), R = new Float32Array(M), G = new Float32Array(M), B = new Float32Array(M), sat = new Float32Array(M), sc = new Float32Array(M);
-    var j, s, k;
+    var j, s, k, radius = roi.curve ? Math.ceil(hv) : wide;
     // 1) әр бағандағы центроид (қисық/бұрыш қатесін өтеу)
     for (j = 0; j < M; j++) {
       var t = roi.t0 + j * (roi.t1 - roi.t0) / (M - 1), sw = 0, ss = 0;
-      for (s = -wide; s <= wide; s++) {
-        if (!sample(img, roi.cx + t * ct - s * st, roi.cy + t * st + s * ct)) continue;
+      var center = bandOffset(roi, t);
+      for (s = -radius; s <= radius; s++) {
+        if (!sample(img, roi.cx + t * ct - (s + center) * st, roi.cy + t * st + (s + center) * ct)) continue;
         var v = (smp.r + smp.g + smp.b) / 3;
+        if (roi.curve) v = Math.max(smp.r, smp.g, smp.b) - Math.min(smp.r, smp.g, smp.b);
         sw += v; ss += v * s;
       }
       sc[j] = sw > 0 ? ss / sw : 0;
@@ -2089,9 +2273,10 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     // 2) ядро бойынша орташа, жақтан фон
     for (j = 0; j < M; j++) {
       var t2 = roi.t0 + j * (roi.t1 - roi.t0) / (M - 1), a = 0, an = 0, ar = 0, ag = 0, ab = 0, sa = 0, bgv = [];
+      var center2 = bandOffset(roi, t2);
       for (s = -wide - Math.ceil(hv); s <= wide + Math.ceil(hv); s++) {
         var os = s - scs[j];
-        if (!sample(img, roi.cx + t2 * ct - s * st, roi.cy + t2 * st + s * ct)) continue;
+        if (!sample(img, roi.cx + t2 * ct - (s + center2) * st, roi.cy + t2 * st + (s + center2) * ct)) continue;
         var vv = (smp.r + smp.g + smp.b) / 3;
         if (Math.abs(s - scs[j]) <= core) { a += vv; ar += smp.r; ag += smp.g; ab += smp.b; sa += smp.sat; an++; }
         else if (Math.abs(os) > 1.6 * hv && Math.abs(os) < 2.8 * hv + 4) bgv.push(vv);
@@ -2275,31 +2460,13 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     best.matched.forEach(function (m) { if (!one[m.bi] || m.d < one[m.bi].d) one[m.bi] = m; });
     var pts = Object.keys(one).map(function (k) { return one[k]; }), n = pts.length;
     if (n < 3) return null;
-    function lsq(deg) {
-      // ең кіші квадраттар: λ = Σ c_k x^k, k=0..deg (қалыпты теңдеулер, Гаусс)
-      var m = deg + 1, A = [], v = [], r, c, k;
-      for (r = 0; r < m; r++) { A.push(new Array(m).fill(0)); v.push(0); }
-      pts.forEach(function (pt) {
-        var pw = [1]; for (k = 1; k <= 2 * deg; k++) pw.push(pw[k - 1] * pt.x);
-        for (r = 0; r < m; r++) { v[r] += pw[r] * pt.wl; for (c = 0; c < m; c++) A[r][c] += pw[r + c]; }
-      });
-      for (r = 0; r < m; r++) {
-        var piv = r; for (c = r + 1; c < m; c++) if (Math.abs(A[c][r]) > Math.abs(A[piv][r])) piv = c;
-        if (Math.abs(A[piv][r]) < 1e-12) return null;
-        var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp; var tv = v[r]; v[r] = v[piv]; v[piv] = tv;
-        for (c = r + 1; c < m; c++) { var f = A[c][r] / A[r][r]; for (k = r; k < m; k++) A[c][k] -= f * A[r][k]; v[c] -= f * v[r]; }
-      }
-      var sol = new Array(m).fill(0);
-      for (r = m - 1; r >= 0; r--) { var acc = v[r]; for (c = r + 1; c < m; c++) acc -= A[r][c] * sol[c]; sol[r] = acc / A[r][r]; }
-      var ss = 0; pts.forEach(function (pt) { var e = sol.reduce(function (a2, cf, kk) { return a2 + cf * Math.pow(pt.x, kk); }, 0) - pt.wl; ss += e * e; });
-      return { co: sol, rms: Math.sqrt(ss / n) };
-    }
-    var lin = lsq(1);
+    var points = pts.map(function (pt) { return { x: pt.x, y: pt.wl }; });
+    var lin = fitPolynomial(points, 1);
     if (!lin) return null;
     if (n === 3 && lin.rms > 1.2) return null;      // 3 сәйкестік тек өте дәл болса ғана
     var cal = { a: lin.co[1], b: lin.co[0], rms: lin.rms, n: n, kind: 'cfl', matched: pts.map(function (m) { return { x: m.x, wl: m.wl, name: m.name }; }) };
     if (n >= 5) {                                   // жеткілікті сызық болса, нелинейлікті тексереміз
-      var quad = lsq(2);
+      var quad = fitPolynomial(points, 2);
       if (quad && quad.rms < 0.7 * lin.rms && Math.abs(quad.co[2]) * M * M < 40) {
         var q = { a: quad.co[1], b: quad.co[0], c: quad.co[2] };
         if (lam(q, 0) !== lam(q, M - 1) && (lam(q, M - 1) - lam(q, 0)) * (q.a) > 0 && Math.abs(2 * q.c * M) < Math.abs(q.a) * 0.9) { cal = { a: q.a, b: q.b, c: q.c, rms: quad.rms, n: n, kind: 'cfl', matched: cal.matched }; }
@@ -2491,7 +2658,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   return {
     WIN_LO: WIN_LO, WIN_HI: WIN_HI, WIN_N: WIN_N, WIN_DX: WIN_DX, CFL_REF: CFL_REF, CFL_SPECIES: CFL_SPECIES, PHOSPHOR: PHOSPHOR,
-    detectBand: detectBand, extractProfile: extractProfile, colorDirection: colorDirection,
+    detectBand: detectBand, bandOffset: bandOffset, extractProfile: extractProfile, colorDirection: colorDirection,
     findPeaks: findPeaks, gauss: gauss, calib2: calib2, autoCalibrateCFL: autoCalibrateCFL,
     lam: lam, idx: idx, disp: disp, localDisp: localDisp, hueLambda: hueLambda, hueMap: hueMap, calibrateByHue: calibrateByHue,
     toModelInput: toModelInput, lineness: lineness, narrowPeaks: narrowPeaks, assess: assess, perturbCal: perturbCal, predictTTA: predictTTA, estimateFwhm: estimateFwhm, verify: verify, downLuma: downLuma
@@ -2629,6 +2796,742 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
 </script>
 <script>
+/* js/calibration.js */
+/* Калибровка қалдықтары және камера қондырғысының сақталатын профильдері. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./camera.js'));
+  else root.SL.calibration = factory(root.SL.camera);
+})(typeof window !== 'undefined' ? window : globalThis, function (camera) {
+  'use strict';
+
+  var STORAGE_KEY = 'raspadatom.calibration-profiles.v1';
+  var ROI_KEYS = ['cx', 'cy', 'theta', 'hv', 't0', 't1'];
+
+  function diagnostics(cal) {
+    if (!cal || !Number.isFinite(cal.a) || !Number.isFinite(cal.b)) return null;
+    var matches = Array.isArray(cal.matched) ? cal.matched : [];
+    var lines = matches.filter(function (m) {
+      return m && Number.isFinite(m.x) && Number.isFinite(m.wl);
+    }).map(function (m) {
+      var fitted = camera.lam(cal, m.x);
+      return { name: m.name || '', x: m.x, referenceNm: m.wl, fittedNm: fitted, errorNm: fitted - m.wl };
+    }).filter(function (row) { return Number.isFinite(row.errorNm); });
+    lines.sort(function (a, b) { return a.referenceNm - b.referenceNm; });
+
+    var rms = Number.isFinite(cal.rms) && cal.rms >= 0 ? cal.rms : null;
+    var maxError = null;
+    if (lines.length) {
+      var residuals = lines.map(function (row) { return Math.abs(row.errorNm); });
+      rms = Math.hypot.apply(null, residuals) / Math.sqrt(lines.length);
+      maxError = Math.max.apply(null, residuals);
+    }
+    return { kind: cal.kind, rms: rms, maxError: maxError, lines: lines };
+  }
+
+  function copyRoi(roi) {
+    var copied = {};
+    ROI_KEYS.forEach(function (key) { copied[key] = roi[key]; });
+    if (roi.curve) {
+      copied.curve = { center: roi.curve.center, scale: roi.curve.scale, coefficients: roi.curve.coefficients.slice() };
+    }
+    return copied;
+  }
+
+  function validCurve(curve, limit) {
+    return curve == null || (
+      Number.isFinite(curve.center) && Math.abs(curve.center) <= limit &&
+      Number.isFinite(curve.scale) && curve.scale > 0 && curve.scale <= limit &&
+      Array.isArray(curve.coefficients) && curve.coefficients.length === 3 &&
+      curve.coefficients.every(function (c) { return Number.isFinite(c) && Math.abs(c) <= limit; })
+    );
+  }
+
+  function captureAxis(img, roi, prof) {
+    if (!img || !roi || !prof || !Number.isSafeInteger(img.width) || !Number.isSafeInteger(img.height) ||
+        img.width < 1 || img.height < 1 || img.width > 16384 || img.height > 16384) return null;
+    var limit = 2 * Math.hypot(img.width, img.height);
+    if (!ROI_KEYS.every(function (key) { return Number.isFinite(roi[key]) && Math.abs(roi[key]) <= limit; }) ||
+        roi.hv <= 0 || roi.t1 <= roi.t0 || roi.t1 - roi.t0 > limit ||
+        prof.M !== Math.max(32, Math.round(roi.t1 - roi.t0)) || !validCurve(roi.curve, limit)) return null;
+    return { width: img.width, height: img.height, length: prof.M, roi: copyRoi(roi) };
+  }
+
+  function axisMatches(axis, img, roi, prof) {
+    if (!axis || !img || !roi || !prof || axis.width !== img.width || axis.height !== img.height || axis.length !== prof.M) return false;
+    var previous = axis.roi;
+    function equal(a, b) { return Math.abs(a - b) < 1e-6; }
+    if (!previous || !ROI_KEYS.every(function (key) { return equal(previous[key], roi[key]); })) return false;
+    var a = previous.curve, b = roi.curve;
+    if (!a || !b) return !a && !b;
+    return equal(a.center, b.center) && equal(a.scale, b.scale) &&
+      a.coefficients.every(function (c, i) { return equal(c, b.coefficients[i]); });
+  }
+
+  function copyCal(cal, length) {
+    if (!cal || cal.provisional || cal.approx || (cal.kind !== 'cfl' && cal.kind !== 'two-point') ||
+        !Number.isFinite(cal.a) || !Number.isFinite(cal.b) || (cal.c != null && !Number.isFinite(cal.c))) return null;
+    var c = cal.c || 0;
+    var end = length - 1;
+    if (!(cal.a * (cal.a + 2 * c * end) > 0) || !Number.isFinite(camera.lam(cal, end))) return null;
+    var d = diagnostics(cal);
+    var count = d.lines.length;
+    if ((cal.kind === 'two-point' && count !== 2) || (cal.kind === 'cfl' && (count < 3 || count > camera.CFL_REF.length)) ||
+        !d.lines.every(function (row) { return row.x >= 0 && row.x <= end && row.referenceNm > 0 && typeof row.name === 'string'; }) ||
+        new Set(d.lines.map(function (row) { return row.x; })).size !== count ||
+        new Set(d.lines.map(function (row) { return row.referenceNm; })).size !== count) return null;
+    var saved = {
+      a: cal.a, b: cal.b, kind: cal.kind, rms: d.rms, n: count,
+      matched: d.lines.map(function (row) { return { x: row.x, wl: row.referenceNm, name: row.name }; })
+    };
+    if (c) saved.c = c;
+    return saved;
+  }
+
+  function makeProfile(name, cal, img, roi, prof) {
+    name = typeof name === 'string' ? name.trim() : '';
+    if (!name) throw new Error('Калибровка профилінің атауын енгізіңіз.');
+    var axis = captureAxis(img, roi, prof);
+    if (!axis) throw new Error('Профильді сақтау үшін алдымен суреттегі спектр жолағын таңдаңыз.');
+    var savedCal = copyCal(cal, axis.length);
+    if (!savedCal) throw new Error('Профиль үшін CFL немесе екі нүкте бойынша калибровка жасаңыз.');
+    return { name: name, cal: savedCal, axis: axis };
+  }
+
+  function validatedProfile(entry) {
+    if (!entry || !entry.axis) throw new Error('Калибровка профилінің деректері жарамсыз.');
+    return makeProfile(entry.name, entry.cal, entry.axis, entry.axis.roi, { M: entry.axis.length });
+  }
+
+  function listProfiles(storage) {
+    try {
+      var raw = storage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var entries = JSON.parse(raw);
+      return entries.map(validatedProfile);
+    } catch (error) {
+      throw new Error('Калибровка профильдерін браузер қоймасынан оқу мүмкін болмады.');
+    }
+  }
+
+  function writeProfiles(storage, profiles) {
+    try {
+      storage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+    } catch (error) {
+      throw new Error('Калибровка профильдерін браузер қоймасына жазу мүмкін болмады.');
+    }
+    return profiles;
+  }
+
+  function saveProfile(storage, profile) {
+    var validated = validatedProfile(profile);
+    var profiles = listProfiles(storage);
+    if (profiles.some(function (p) { return p.name === validated.name; })) throw new Error('Бұл атаумен калибровка профилі бар.');
+    profiles.push(validated);
+    return writeProfiles(storage, profiles);
+  }
+
+  function deleteProfile(storage, name) {
+    var retained = listProfiles(storage).filter(function (p) { return p.name !== name; });
+    return writeProfiles(storage, retained);
+  }
+
+  function restoreProfile(profile, img) {
+    var stored = validatedProfile(profile);
+    if (!img || img.width !== stored.axis.width || img.height !== stored.axis.height) {
+      throw new Error('Сурет өлшемі профильге сәйкес емес (' + stored.axis.width + ' × ' + stored.axis.height + ' px қажет).');
+    }
+    return { cal: stored.cal, roi: stored.axis.roi, length: stored.axis.length };
+  }
+
+  return {
+    diagnostics: diagnostics, captureAxis: captureAxis, axisMatches: axisMatches, makeProfile: makeProfile,
+    listProfiles: listProfiles, saveProfile: saveProfile, deleteProfile: deleteProfile, restoreProfile: restoreProfile
+  };
+});
+
+</script>
+<script>
+/* js/measurements.js */
+/* Спектр өлшеулерін CSV арқылы тасымалдау және браузерде сақтау. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(root);
+  else root.SL_MEASUREMENTS = factory(root);
+})(typeof window !== 'undefined' ? window : globalThis, function (root) {
+  'use strict';
+
+  var MAX_CSV_BYTES = 8 * 1024 * 1024;
+  var MAX_POINTS = 50000;
+  var RECORD_PREFIX = 'raspadatom.measurement.v1.';
+  var WAVELENGTH_HEADERS = ['wavelengthnm', 'wavelength', 'lambda', 'lambdanm', 'λ', 'λnm', 'nm', 'толқынұзындығы', 'толқынұзындығынм'];
+  var INTENSITY_HEADERS = ['intensity', 'relativeintensity', 'normalizedintensity', 'intensitycounts', 'intensityau', 'signal', 'counts', 'absorbance', 'amplitude', 'қарқындылық'];
+  var DECIMAL = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+  function numericArray(values) {
+    return Array.isArray(values) || ArrayBuffer.isView(values) && typeof values.length === 'number';
+  }
+
+  function create({ name, wavelengths, intensity, peaks = [], source = 'lab', createdAt } = {}) {
+    if (!numericArray(wavelengths) || !numericArray(intensity) ||
+        wavelengths.length !== intensity.length || wavelengths.length < 2 || wavelengths.length > MAX_POINTS) {
+      throw new Error('Спектрде толқын ұзындығы мен қарқындылығы бар 2–50 000 нүкте болуы керек.');
+    }
+    var samples = Array.from(wavelengths, function (wavelength, i) {
+      if (!Number.isFinite(wavelength) || wavelength <= 0 || !Number.isFinite(intensity[i])) {
+        throw new Error('Толқын ұзындығы оң сан, ал қарқындылық ақырлы сан болуы керек.');
+      }
+      return { wavelength: wavelength, intensity: intensity[i] };
+    }).sort(function (a, b) { return a.wavelength - b.wavelength; });
+    if (samples.some(function (sample, i) { return i > 0 && sample.wavelength === samples[i - 1].wavelength; })) {
+      throw new Error('Үлгі нүктелерінде бірдей толқын ұзындығы қайталанады.');
+    }
+    if (!Array.isArray(peaks) || peaks.length > MAX_POINTS) throw new Error('Спектр шыңдарының тізімі жарамсыз.');
+    var minWavelength = samples[0].wavelength, maxWavelength = samples[samples.length - 1].wavelength;
+    var checkedPeaks = Array.from(peaks, function (peak) {
+      if (!peak || !Number.isFinite(peak.wavelength) || !Number.isFinite(peak.intensity) ||
+          peak.wavelength < minWavelength || peak.wavelength > maxWavelength) {
+        throw new Error('Шыңның мәндері ақырлы сан болып, толқын ұзындығы спектр аралығында жатуы керек.');
+      }
+      return { wavelength: peak.wavelength, intensity: peak.intensity };
+    }).sort(function (a, b) { return a.wavelength - b.wavelength || b.intensity - a.intensity; });
+    var time = createdAt === undefined ? Date.now() : Date.parse(createdAt);
+    if (!Number.isFinite(time)) throw new Error('Өлшеу күні жарамсыз.');
+    return {
+      name: typeof name === 'string' && name.trim() ? name.trim() : 'Спектр',
+      wavelengths: samples.map(function (sample) { return sample.wavelength; }),
+      intensity: samples.map(function (sample) { return sample.intensity; }),
+      peaks: checkedPeaks,
+      source: typeof source === 'string' && source ? source : 'lab',
+      createdAt: new Date(time).toISOString()
+    };
+  }
+
+  function toCSV(snapshot) {
+    var data = create(snapshot);
+    var markedSamples = new Set(), offGrid = [];
+    var sampleIndex = new Map(data.wavelengths.map(function (wavelength, i) { return [wavelength, i]; }));
+    data.peaks.forEach(function (peak) {
+      var i = sampleIndex.get(peak.wavelength);
+      if (i !== undefined && data.intensity[i] === peak.intensity && !markedSamples.has(i)) {
+        markedSamples.add(i);
+      } else {
+        offGrid.push([peak.wavelength, peak.intensity, 'peak_only'].join(','));
+      }
+    });
+    var rows = data.wavelengths.map(function (wavelength, i) {
+      return [wavelength, data.intensity[i], markedSamples.has(i) ? 1 : 0].join(',');
+    });
+    return ['wavelength_nm,intensity,peak'].concat(rows, offGrid).join('\r\n') + '\r\n';
+  }
+
+  function delimiterFor(text) {
+    var quoted = false;
+    for (var i = 0; i < text.length; i++) {
+      var char = text[i];
+      if (char === '"') quoted = !quoted;
+      if (quoted) continue;
+      if (char === '\n' || char === '\r') break;
+      if (char === ';' || char === '\t') return char;
+    }
+    return ',';
+  }
+
+  function csvRows(text, delimiter) {
+    var rows = [], row = [], field = '', inQuotes = false, closedQuote = false;
+    for (var i = 0; i <= text.length; i++) {
+      var char = text[i];
+      if (inQuotes) {
+        if (char === undefined) throw new Error('CSV бағанындағы тырнақша жабылмаған.');
+        if (char !== '"') {
+          field += char;
+        } else if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+          closedQuote = true;
+        }
+        continue;
+      }
+      var endRow = char === undefined || char === '\r' || char === '\n';
+      if (endRow || char === delimiter) {
+        row.push(field.trim());
+        field = '';
+        closedQuote = false;
+        if (endRow) {
+          if (row.length > 1 || row[0]) rows.push(row);
+          if (rows.length > 2 * MAX_POINTS + 1) throw new Error('CSV файлында нүктелер тым көп.');
+          row = [];
+          if (char === '\r' && text[i + 1] === '\n') i++;
+        }
+      } else if (char === '"' && !closedQuote && !field.trim()) {
+        field = '';
+        inQuotes = true;
+      } else if (char === '"' || closedQuote && char.trim()) {
+        throw new Error('CSV бағанындағы тырнақша дұрыс қолданылмаған.');
+      } else if (!closedQuote) {
+        field += char;
+      }
+    }
+    return rows;
+  }
+
+  function csvNumber(field, delimiter) {
+    var decimal = delimiter === ',' ? field : field.replace(',', '.');
+    return DECIMAL.test(decimal) ? Number(decimal) : NaN;
+  }
+
+  function fromCSV(text, name = 'Импортталған спектр') {
+    if (typeof text !== 'string' || !text.trim()) throw new Error('CSV файлы бос.');
+    if (text.length > MAX_CSV_BYTES || new TextEncoder().encode(text).length > MAX_CSV_BYTES) {
+      throw new Error('CSV файлы 8 МБ-тан аспауы керек.');
+    }
+    var contents = text.trim(), delimiter = delimiterFor(contents), rows = csvRows(contents, delimiter);
+    var header = rows[0];
+    var bare = header && header.length === 2 && header.every(function (cell) {
+      return Number.isFinite(csvNumber(cell, delimiter));
+    });
+    var headings = bare || !header ? [] : header.map(function (cell) {
+      return cell.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+    });
+    var wavelengthCol = bare ? 0 : headings.findIndex(function (cell) { return WAVELENGTH_HEADERS.includes(cell); });
+    var intensityCol = bare ? 1 : headings.findIndex(function (cell) { return INTENSITY_HEADERS.includes(cell); });
+    var peakCol = headings.indexOf('peak');
+    if (wavelengthCol === -1 || intensityCol === -1) {
+      throw new Error('CSV үшін wavelength_nm (нм) және intensity бағандары қажет.');
+    }
+    var wavelengths = [], intensity = [], peaks = [];
+    for (var i = bare ? 0 : 1; i < rows.length; i++) {
+      var row = rows[i], wavelength = csvNumber(row[wavelengthCol] || '', delimiter);
+      var value = csvNumber(row[intensityCol] || '', delimiter);
+      var flag = peakCol < 0 ? '' : (row[peakCol] || '').toLowerCase();
+      if (row.length !== header.length || !Number.isFinite(wavelength) || wavelength <= 0 || !Number.isFinite(value) ||
+          !['', '0', '1', 'peak_only'].includes(flag)) {
+        throw new Error('CSV файлындағы ' + (i + 1) + '-жолда жарамсыз мән бар.');
+      }
+      if (flag !== 'peak_only') {
+        wavelengths.push(wavelength);
+        intensity.push(value);
+      }
+      if (flag === '1' || flag === 'peak_only') peaks.push({ wavelength: wavelength, intensity: value });
+    }
+    return create({ name: name, wavelengths: wavelengths, intensity: intensity, peaks: peaks, source: 'csv' });
+  }
+
+  function list(storage = root.localStorage) {
+    var records = [];
+    for (var i = 0; i < storage.length; i++) {
+      var key = storage.key(i);
+      if (!key || !key.startsWith(RECORD_PREFIX)) continue;
+      var raw = storage.getItem(key);
+      if (raw === null) continue;
+      try {
+        records.push({ ...create(JSON.parse(raw)), id: key.slice(RECORD_PREFIX.length) });
+      } catch (error) {
+        throw new Error('Сақталған өлшеу дерегін оқу мүмкін болмады.', { cause: error });
+      }
+    }
+    return records.sort(function (a, b) { return b.createdAt.localeCompare(a.createdAt); });
+  }
+
+  function save(snapshot, storage = root.localStorage) {
+    var record = create(snapshot);
+    var id = root.crypto && root.crypto.randomUUID ? root.crypto.randomUUID() :
+      Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    try {
+      storage.setItem(RECORD_PREFIX + id, JSON.stringify(record));
+    } catch (error) {
+      throw new Error('Өлшеуді браузерде сақтау мүмкін болмады.', { cause: error });
+    }
+    return { ...record, id: id };
+  }
+
+  function remove(id, storage = root.localStorage) {
+    storage.removeItem(RECORD_PREFIX + id);
+  }
+
+  return { create: create, fromCSV: fromCSV, toCSV: toCSV, list: list, save: save, remove: remove, MAX_CSV_BYTES: MAX_CSV_BYTES };
+});
+
+</script>
+<script>
+/* js/spectrum-confidence.js */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else { root.SL = root.SL || {}; root.SL.spectrumConfidence = factory(); }
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+
+  function unknown(reason) {
+    return { status: 'unknown', reasons: [reason], supported: [], uncertain: [], unexplainedCount: 0 };
+  }
+
+  function summarize(assessment, speciesNames, calibration = assessment && assessment.cal) {
+    if (!assessment) return unknown('no-signal');
+
+    const reasons = [];
+    const reliableAxis = calibration && !calibration.provisional && !calibration.approx
+      && Number.isFinite(calibration.a) && calibration.a !== 0 && Number.isFinite(calibration.b);
+    const enoughCoverage = assessment.inp.coverage >= 0.5;
+    const hasLines = !assessment.continuum && assessment.narrow.length > 0;
+    if (!reliableAxis) reasons.push('unreliable-calibration');
+    if (!enoughCoverage) reasons.push('limited-coverage');
+    if (!hasLines) reasons.push('no-narrow-lines');
+    if (!assessment.pred.length) reasons.push('no-model-candidates');
+
+    const supported = [];
+    const uncertain = [];
+    const canVerify = reliableAxis && enoughCoverage && hasLines;
+    assessment.pred.forEach(index => {
+      const candidate = { index, name: speciesNames[index], score: assessment.res.probs[index] };
+      if (canVerify && assessment.predGated.includes(index) && assessment.confirmed.includes(candidate.name)) {
+        supported.push(candidate);
+      } else {
+        uncertain.push(candidate);
+      }
+    });
+
+    if (canVerify && uncertain.length) reasons.push('unverified-candidates');
+    const unexplainedCount = hasLines ? assessment.ver.unexplained.length : 0;
+    if (unexplainedCount) reasons.push('unexplained-peaks');
+    const status = supported.length === 0 ? 'unknown' : reasons.length ? 'partial' : 'supported';
+    return { status, reasons, supported, uncertain, unexplainedCount };
+  }
+
+  // Interpolate the measured part of the camera model's window onto an even axis.
+  // Gaps wider than 5 nm can hide narrow lines, so they preclude model interpretation.
+  const MAX_GAP_NM = 5;
+
+  function assessMeasurement(snapshot, model, byName, species, camera) {
+    const fail = reason => ({ assessment: null, summary: unknown(reason) });
+    const { wavelengths, intensity } = snapshot;
+    const lo = Math.max(camera.WIN_LO, wavelengths[0]);
+    const hi = Math.min(camera.WIN_HI, wavelengths[wavelengths.length - 1]);
+    if (!(hi > lo)) return fail('outside-model-range');
+
+    let scale = 0;
+    let first = 0;
+    while (wavelengths[first + 1] <= lo) first++;
+    for (let i = first; wavelengths[i] < hi; i++) {
+      if (wavelengths[i + 1] - wavelengths[i] > MAX_GAP_NM) return fail('sparse-sampling');
+      scale = Math.max(scale, Math.abs(intensity[i]), Math.abs(intensity[i + 1]));
+    }
+    if (!(scale > 0)) return fail('no-signal');
+
+    const size = Math.ceil((hi - lo) / camera.WIN_DX) + 1;
+    const cal = { a: (hi - lo) / (size - 1), b: lo, kind: 'csv' };
+    const p = new Float32Array(size);
+    let left = first;
+    let minimum = 0;
+    for (let i = 0; i < size; i++) {
+      const wavelength = i === size - 1 ? hi : lo + i * cal.a;
+      while (wavelengths[left + 1] < wavelength) left++;
+      const fraction = (wavelength - wavelengths[left]) / (wavelengths[left + 1] - wavelengths[left]);
+      p[i] = (1 - fraction) * (intensity[left] / scale) + fraction * (intensity[left + 1] / scale);
+      minimum = Math.min(minimum, p[i]);
+    }
+    // The camera model expects nonnegative detector intensities.
+    if (minimum < 0) for (let i = 0; i < size; i++) p[i] -= minimum;
+
+    const result = camera.assess({ p }, cal, model, byName, species);
+    const assessment = result && { ...result, cal };
+    return { assessment, summary: summarize(assessment, model.species) };
+  }
+
+  return { summarize, assessMeasurement };
+});
+
+</script>
+<script>
+/* js/measurement-panel.js */
+/* Өлшемдерді CSV арқылы тасымалдау, сақтау және салыстыру. */
+(function () {
+  'use strict';
+
+  const { SL, SL_MEASUREMENTS: measurements, SL_DATA, SL_MODEL_CAM } = window;
+  const elements = {};
+  for (const name of ['Name', 'File', 'Save', 'Export', 'History', 'Compare', 'Open', 'Remove',
+    'Status', 'Graph', 'Summary', 'Analysis']) {
+    elements[name] = document.getElementById('measurement' + name);
+  }
+
+  const number = new Intl.NumberFormat('kk-KZ', { maximumFractionDigits: 2 });
+  const date = new Intl.DateTimeFormat('kk-KZ', { dateStyle: 'short', timeStyle: 'short' });
+  const reasons = {
+    'outside-model-range': 'Спектр 380–780 нм аралығымен қиылыспайды.',
+    'sparse-sampling': 'Өлшенген нүктелердің арасы тым алшақ.',
+    'no-signal': 'Талдауға жеткілікті сигнал табылмады.',
+    'limited-coverage': 'Өлшенген аралық модель терезесінің аз бөлігін қамтиды.',
+    'no-narrow-lines': 'Атомдық сызықтарға ұқсас тар шыңдар жеткіліксіз.',
+    'no-model-candidates': 'Модельдің іріктеу шегінен бірде-бір түр өтпеді.',
+    'unverified-candidates': 'Кей болжамдарды спектр сызықтары жеткілікті қолдамайды.',
+    'unexplained-peaks': 'Түсіндірілмеген шыңдар бар.',
+    'unreliable-calibration': 'Толқын ұзындықтарының калибрленуі жеткіліксіз.'
+  };
+  let active = null;
+  let records = [];
+  let cameraModel;
+  let analysis;
+  let importRequest = 0;
+
+  function status(message, error = false) {
+    elements.Status.textContent = message;
+    elements.Status.classList.toggle('bad', error);
+  }
+
+  function attempt(operation) {
+    try {
+      operation();
+    } catch (error) {
+      status(error instanceof Error ? error.message : 'Әрекетті орындау мүмкін болмады.', true);
+    }
+  }
+
+  function findRecord(id) {
+    return records.find(record => record.id === id);
+  }
+
+  function fillChoices(select, label, description) {
+    const previous = select.value;
+    select.replaceChildren(new Option(label, ''));
+    for (const record of records) select.add(new Option(description(record), record.id));
+    if (findRecord(previous)) select.value = previous;
+  }
+
+  function refreshHistory() {
+    records = measurements.list();
+    fillChoices(elements.History, 'Өлшем таңдаңыз', record =>
+      record.name + ' · ' + date.format(new Date(record.createdAt)));
+    fillChoices(elements.Compare, 'Салыстырмау', record => record.name);
+  }
+
+  function updateButtons() {
+    elements.Save.disabled = elements.Export.disabled = elements.Name.disabled = !active;
+    elements.Open.disabled = elements.Remove.disabled = !findRecord(elements.History.value);
+    elements.Compare.disabled = !active || records.length === 0;
+  }
+
+  function spectrumSummary(snapshot) {
+    const wavelengths = snapshot.wavelengths;
+    return snapshot.name + ' · ' + number.format(wavelengths[0]) + '–' +
+      number.format(wavelengths[wavelengths.length - 1]) + ' нм · ' + number.format(wavelengths.length) + ' нүкте';
+  }
+
+  function setActive(snapshot) {
+    active = snapshot;
+    importRequest++;
+    elements.Name.value = snapshot.name;
+    if (snapshot.id && snapshot.id === elements.Compare.value) elements.Compare.value = '';
+    analysis = null;
+    render();
+  }
+
+  function draw() {
+    const reference = active && findRecord(elements.Compare.value);
+    const summary = active
+      ? 'Өлшем: ' + spectrumSummary(active) + (reference ? ' · Үзік сызық: ' + spectrumSummary(reference) : '')
+      : 'Зертханадан не камерадан өлшем қосыңыз немесе CSV файлын ашыңыз.';
+    elements.Summary.textContent = summary;
+    const canvas = elements.Graph;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (!width || !height) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+    const ctx = canvas.getContext('2d');
+    const style = getComputedStyle(document.documentElement);
+    const color = key => style.getPropertyValue(key).trim();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = color('--graph-bg');
+    ctx.fillRect(0, 0, width, height);
+    if (!active) return;
+
+    const curves = reference ? [active, reference] : [active];
+    const low = Math.min(...curves.map(curve => curve.wavelengths[0]));
+    const high = Math.max(...curves.map(curve => curve.wavelengths[curve.wavelengths.length - 1]));
+    const signed = curves.some(curve => curve.intensity.some(value => value < 0));
+    const left = 42;
+    const top = 13;
+    const right = width - 14;
+    const bottom = height - 40;
+    if (right <= left || bottom <= top) return;
+    const x = wavelength => left + (wavelength - low) / (high - low) * (right - left);
+    const y = value => bottom - (value + (signed ? 1 : 0)) / (signed ? 2 : 1) * (bottom - top);
+
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.strokeStyle = color('--graph-grid');
+    ctx.fillStyle = color('--graph-axis');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const ticks = Math.max(2, Math.floor((right - left) / 72));
+    for (let i = 0; i <= ticks; i++) {
+      const wavelength = low + (high - low) * i / ticks;
+      const px = x(wavelength);
+      ctx.beginPath();
+      ctx.moveTo(px, top);
+      ctx.lineTo(px, bottom);
+      ctx.stroke();
+      ctx.fillText(number.format(wavelength), px, bottom + 5);
+    }
+    ctx.textAlign = 'right';
+    ctx.fillText('λ, нм', right, bottom + 22);
+    ctx.textBaseline = 'middle';
+    for (const value of signed ? [-1, -0.5, 0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1]) {
+      const py = y(value);
+      ctx.beginPath();
+      ctx.moveTo(left, py);
+      ctx.lineTo(right, py);
+      ctx.stroke();
+      ctx.fillText(number.format(value), left - 5, py);
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left - 2, top - 2, right - left + 4, bottom - top + 4);
+    ctx.clip();
+    curves.forEach((curve, index) => {
+      const scale = curve.intensity.reduce((max, value) => Math.max(max, Math.abs(value)), 0) || 1;
+      ctx.strokeStyle = ctx.fillStyle = color(index ? '--focus' : '--graph-curve');
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash(index ? [6, 4] : []);
+      ctx.beginPath();
+      curve.wavelengths.forEach((wavelength, i) => {
+        const px = x(wavelength);
+        const py = y(curve.intensity[i] / scale);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      for (const peak of curve.peaks) {
+        const py = y(Math.max(-1, Math.min(1, peak.intensity / scale)));
+        ctx.beginPath();
+        ctx.arc(x(peak.wavelength), py, 2.5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    });
+    ctx.restore();
+  }
+
+  function displayAnalysis() {
+    elements.Analysis.replaceChildren();
+    if (!active || active.source !== 'csv') return;
+    elements.Analysis.textContent = 'Талдау 380–780 нм аймағындағы камера моделіне негізделеді. ' +
+      'Модель камера спектрін имитациялайтын синтетикалық деректерде оқытылған.';
+    if (!SL_MODEL_CAM) return;
+    if (!cameraModel) cameraModel = new SL.ai.Model(SL_MODEL_CAM);
+    if (!analysis) {
+      const species = SL_DATA.species;
+      const byName = Object.fromEntries(species.map(entry => [entry.name, entry]));
+      analysis = SL.spectrumConfidence.assessMeasurement(active, cameraModel, byName, species, SL.camera).summary;
+    }
+
+    const result = document.createElement('ul');
+    function add(text) {
+      const item = document.createElement('li');
+      item.textContent = text;
+      result.append(item);
+    }
+    const displayNames = entries => entries.map(entry => entry.name).join(', ');
+    if (analysis.supported.length) add('Сызықтармен қолдау тапқан түрлер: ' + displayNames(analysis.supported) + '.');
+    else add('Құрамы белгісіз. Анықтауға жеткілікті дәлел жиналмады.');
+    if (analysis.uncertain.length) add('Күмәнді түрлер: ' + displayNames(analysis.uncertain) + '.');
+    for (const reason of analysis.reasons) {
+      if (reasons[reason]) add(reasons[reason]);
+    }
+    elements.Analysis.append(result);
+  }
+
+  function render() {
+    updateButtons();
+    draw();
+    displayAnalysis();
+  }
+
+  function nameSnapshot() {
+    return measurements.create({ ...active, name: elements.Name.value });
+  }
+
+  elements.Save.addEventListener('click', () => attempt(() => {
+    const saved = measurements.save(nameSnapshot());
+    refreshHistory();
+    elements.History.value = saved.id;
+    setActive(saved);
+    status('Өлшем осы браузерде сақталды.');
+  }));
+  elements.Export.addEventListener('click', () => attempt(() => {
+    const snapshot = nameSnapshot();
+    const url = URL.createObjectURL(new Blob([measurements.toCSV(snapshot)], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = (snapshot.name.replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim() || 'spectrum') + '.csv';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status('CSV файлы жүктелуде.');
+  }));
+  elements.Open.addEventListener('click', () => attempt(() => {
+    const snapshot = findRecord(elements.History.value);
+    if (snapshot) {
+      setActive(snapshot);
+      status('Сақталған өлшем ашылды.');
+    }
+  }));
+  elements.Remove.addEventListener('click', () => attempt(() => {
+    measurements.remove(elements.History.value);
+    refreshHistory();
+    render();
+    status('Өлшем тарихтан өшірілді.');
+  }));
+  elements.History.addEventListener('change', updateButtons);
+  elements.Compare.addEventListener('change', draw);
+  elements.File.addEventListener('change', async () => {
+    const file = elements.File.files[0];
+    elements.File.value = '';
+    if (!file) return;
+    const request = ++importRequest;
+    let text;
+    try {
+      if (file.size > measurements.MAX_CSV_BYTES) throw new Error('CSV файлы тым үлкен.');
+      text = await file.text();
+    } catch (error) {
+      if (request === importRequest) status(error.message, true);
+      return;
+    }
+    if (request !== importRequest) return;
+    attempt(() => {
+      setActive(measurements.fromCSV(text, file.name.replace(/\.(csv|tsv)$/i, '')));
+      status('CSV файлы ашылды.');
+    });
+  });
+  window.addEventListener('resize', draw);
+  window.addEventListener('storage', () => attempt(() => {
+    refreshHistory();
+    updateButtons();
+    draw();
+  }));
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  SL.measurementPanel = {
+    capture(input) {
+      const snapshot = measurements.create(input);
+      setActive(snapshot);
+      document.querySelector('[data-view="measure"]').click();
+      status('Ағымдағы спектр өлшеулерге қосылды.');
+      return snapshot;
+    }
+  };
+  attempt(refreshHistory);
+  render();
+})();
+
+</script>
+<script>
 /* js/app.js */
 /* Спектр зертханасы: интерфейс. Физика — physics.js, ЖИ — ai.js, 3D — atomscene.js / benchscene.js. */
 (function () {
@@ -2674,7 +3577,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     mode: 'emission', range: 'full', scale: 'lin', scene: 'atom',
     sel: [{ name: 'H I', conc: 1 }],
     T: 9000, fwhm: 1.2, eta: 0.5, noise: 0.01, shift: 0, tau: 3, exposure: 1.4, seed: 11,
-    tr: null, mystery: null, ai: null, hover: null
+    tr: null, mystery: null, ai: null, hover: null, zoom: null
   };
   var cache = { spec: new Float32Array(P.N), clean: null, strengths: [], obs: null };
   var refLines = [];
@@ -2698,7 +3601,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   function compute() {
     var par = params(), truth = truthSel(), N = P.N, i;
-    if (!truth.length) { cache.spec = new Float32Array(N); cache.strengths = []; cache.obs = new Float64Array(N); return; }
+    if (!truth.length) { cache.spec = new Float32Array(N); cache.strengths = []; cache.obs = new Float64Array(N); cache.tr = null; return; }
     if (state.mode === 'emission') {
       var r = P.emissionClean(truth, par.T, par.fwhm, par.eta, par.shift);
       cache.clean = r.clean; cache.strengths = r.strengths; cache.obs = r.clean;
@@ -2712,7 +3615,15 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     }
   }
 
-  function view() { return state.range === 'vis' ? [380, 760] : [200, 900]; }
+  function fullView() { return state.range === 'vis' ? [380, 760] : [200, 900]; }
+  function view() { return state.zoom || fullView(); }
+  function setZoom(range) {
+    state.zoom = range;
+    state.hover = null; $('#readout').replaceChildren();
+    $('#labZoomIn').disabled = view()[1] - view()[0] <= 20;
+    $('#labZoomReset').disabled = !range;
+    buildRefLines(); ensureTransition(); renderTable(); drawStrip(); drawGraph();
+  }
   function maxIn(arr, lo, hi) {
     var a = Math.max(0, Math.floor(P.wlToIndex(lo))), b = Math.min(P.N - 1, Math.ceil(P.wlToIndex(hi))), m = 1e-9;
     for (var i = a; i <= b; i++) if (arr[i] > m) m = arr[i];
@@ -2798,7 +3709,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     }
     ctx.font = '11px "JetBrains Mono", ui-monospace, monospace'; ctx.lineWidth = 1;
     // тор
-    var xs = state.range === 'vis' ? 50 : 100;
+    var span = v[1] - v[0], xs = span > 400 ? 100 : span > 200 ? 50 : span > 80 ? 20 : span > 40 ? 10 : 5;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (var wl = Math.ceil(v[0] / xs) * xs; wl <= v[1]; wl += xs) {
       ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(X(wl), MT); ctx.lineTo(X(wl), bot); ctx.stroke();
@@ -2807,8 +3718,8 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     var yt = log ? [0.001, 0.01, 0.1, 1] : [0, 0.25, 0.5, 0.75, 1];
     yt.forEach(function (t) {
-      ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t)); ctx.lineTo(W - MR, Y(t)); ctx.stroke();
-      ctx.fillStyle = th.axis; ctx.fillText(log ? (t >= 1 ? '1' : String(t)) : t.toFixed(2).replace(/0$/, ''), ML - 6, Y(t));
+      ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t * gmax)); ctx.lineTo(W - MR, Y(t * gmax)); ctx.stroke();
+      ctx.fillStyle = th.axis; ctx.fillText(log ? (t >= 1 ? '1' : String(t)) : t.toFixed(2).replace(/0$/, ''), ML - 6, Y(t * gmax));
     });
     ctx.save(); ctx.translate(10, MT + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillStyle = th.axis;
     ctx.fillText(state.range === 'vis' ? 'I (көрінетін max = 1)' : 'I, қатысты', 0, 0); ctx.restore();
@@ -2816,7 +3727,9 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     // көрінетін аймақтың кемпірқосақ жолағы
     var g = ctx.createLinearGradient(X(380), 0, X(760), 0);
     for (var s = 0; s <= 12; s++) { var w2 = 380 + (380 * s) / 12; g.addColorStop(s / 12, P.rgbCss(P.wlColor(w2), 1)); }
-    ctx.fillStyle = g; ctx.fillRect(Math.max(ML, X(380)), bot, Math.min(X(760), W - MR) - Math.max(ML, X(380)), 3);
+    if (v[1] > 380 && v[0] < 760) {
+      ctx.fillStyle = g; ctx.fillRect(Math.max(ML, X(380)), bot, Math.min(X(760), W - MR) - Math.max(ML, X(380)), 3);
+    }
 
     // иілік астындағы түсті бояу
     var i0 = Math.max(0, Math.floor(P.wlToIndex(v[0]))), i1 = Math.min(P.N - 2, Math.ceil(P.wlToIndex(v[1])));
@@ -3153,12 +4066,34 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       else if (id === 'bExit') exitMystery();
     });
     $$('#modeSeg button').forEach(function (b) { b.addEventListener('click', function () { if (state.mode === b.dataset.mode) return; state.mode = b.dataset.mode; refreshAll(); }); });
-    $$('#rangeSeg button').forEach(function (b) { b.addEventListener('click', function () { state.range = b.dataset.range; syncControls(); refreshSpectrum(false); }); });
+    $$('#rangeSeg button').forEach(function (b) { b.addEventListener('click', function () { state.range = b.dataset.range; syncControls(); setZoom(null); }); });
     $$('#scaleSeg button').forEach(function (b) { b.addEventListener('click', function () { state.scale = b.dataset.scale; syncControls(); drawGraph(); }); });
     $$('#sceneSeg button').forEach(function (b) { b.addEventListener('click', function () { setScene(b.dataset.scene); }); });
     $('#linesTable tbody').addEventListener('click', function (e) {
       var tr = e.target.closest('tr'); if (!tr || tr.dataset.k == null) return;
       selectTransition(species[+tr.dataset.k], +tr.dataset.i);
+    });
+    $('#labZoomIn').addEventListener('click', function () {
+      var v = view(), width = Math.max(20, (v[1] - v[0]) / 2);
+      var center = state.tr ? state.tr.sp.wl[state.tr.i] : (v[0] + v[1]) / 2;
+      var lo = Math.max(v[0], Math.min(v[1] - width, center - width / 2));
+      setZoom([lo, lo + width]);
+    });
+    $('#labZoomReset').addEventListener('click', function () { setZoom(null); });
+    $('#labCapture').addEventListener('click', function () {
+      var spectrum = cache.spec;
+      var name = state.mystery ? 'Белгісіз қоспа' : state.sel.map(function (s) { return sname(byName[s.name]); }).join(' + ') || 'Зертхана спектрі';
+      var wavelengths = Array.from(spectrum, function (_, i) { return P.indexToWl(i); });
+      var signal = state.mode === 'emission' ? spectrum : cache.tr && Float32Array.from(cache.tr, function (t) { return 1 - t; });
+      var peaks = [];
+      if (signal) {
+        var smoothed = SL.camera.gauss(signal, 0.8);
+        peaks = SL.camera.findPeaks(smoothed, 0.12 * maxOf(smoothed), 4).map(function (p) {
+          var wavelength = P.indexToWl(p.x);
+          return { wavelength: wavelength, intensity: specAt(wavelength, spectrum) };
+        });
+      }
+      SL.measurementPanel.capture({ name: name, source: 'lab', wavelengths: wavelengths, intensity: spectrum, peaks: peaks });
     });
 
     // спектр бойынша меңзер / басу
@@ -3192,6 +4127,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     function onClick(cv, left, right) {
       return function (e) {
         var wl = wlFrom(e, cv, left, right); if (wl == null) return;
+        onMove(cv, left, right)(e);
         var c = candidatesAt(wl); if (!c.length) return;
         if (!state.sel.some(function (s) { return s.name === c[0].sp.name; }) && state.mystery) { /* гипотезаға қоспаймыз: тек атомды көрсетеміз */ }
         selectTransition(c[0].sp, c[0].i);
@@ -3199,7 +4135,10 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     }
     var strip = $('#strip'), graph = $('#graph');
     strip.addEventListener('pointermove', onMove(strip, 0, 0)); graph.addEventListener('pointermove', onMove(graph, ML, MR));
-    [strip, graph].forEach(function (cv) { cv.addEventListener('pointerleave', function () { state.hover = null; $('#readout').innerHTML = ''; redrawSoon(); }); });
+    [strip, graph].forEach(function (cv) { cv.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'touch') return;
+      state.hover = null; $('#readout').innerHTML = ''; redrawSoon();
+    }); });
     strip.addEventListener('click', onClick(strip, 0, 0)); graph.addEventListener('click', onClick(graph, ML, MR));
 
     // 3D басқаруы
@@ -3269,11 +4208,18 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
-  if (!MC || !SL || !SL.camera) {            // камера моделі жоқ жинақ: бөлімді жасырамыз
-    var vs = $('#viewSeg'); if (vs) vs.hidden = true;
+  var hasCamera = Boolean(MC && SL && SL.camera);
+  var views = { lab: ['#viewLab', '#lab'], cam: ['#viewCam', '#camera'], measure: ['#viewMeasure', '#measurements'] };
+  $('#viewSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view);
+  });
+  window.addEventListener('hashchange', function () { setView(viewFromHash()); });
+  if (!hasCamera) {
+    $('[data-view=cam]').hidden = true;
+    setView(viewFromHash());
     return;
   }
-  var P = SL.physics, AI = SL.ai, C = SL.camera, CS = SL.camsim;
+  var P = SL.physics, AI = SL.ai, C = SL.camera, CS = SL.camsim, CAL = SL.calibration;
   var species = D.species, byName = {};
   species.forEach(function (s) { byName[s.name] = s; });
   var model = new AI.Model(MC);
@@ -3282,20 +4228,25 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   var cs = {
     img: null, roi: null, base: null, lock: false, prof: null, dir: { flip: false, conf: 0 },
-    cal: null, anchors: [{ x: null, wl: null }, { x: null, wl: null }], pick: 0, hover: null, flipUser: null,
-    ai: null, ver: null, fwhm: 4, live: null, frozen: false, label: '',
+    cal: null, calAxis: null, anchors: [{ x: null }, { x: null }], pick: 0, hover: null, zoom: null, selected: null, flipUser: null,
+    ai: null, ver: null, fwhm: 4, live: null, frozen: false, label: '', source: '', drawing: false,
     sim: { seed: 1, geo: null, src: null }, lastAI: 0, aiTimer: 0
   };
 
   // ================= көрініс ауыстыру =================
+  function viewFromHash() {
+    if (location.hash === views.measure[1]) return 'measure';
+    if (hasCamera && location.hash === views.cam[1]) return 'cam';
+    return 'lab';
+  }
   function setView(v) {
-    var cam = v === 'cam';
-    $('#viewLab').hidden = cam; $('#viewCam').hidden = !cam;
+    if (v === 'cam' && !hasCamera) v = 'lab';
+    Object.keys(views).forEach(function (key) { $(views[key][0]).hidden = key !== v; });
     $$('#viewSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === v ? 'true' : 'false'); });
-    try { if (location.hash !== (cam ? '#camera' : '#lab')) history.replaceState(null, '', cam ? '#camera' : '#lab'); } catch (e) { /* ішкі қорғалған орта */ }
-    if (!cam) stopLive();
+    try { if (location.hash !== views[v][1]) history.replaceState(null, '', views[v][1]); } catch (e) { /* ішкі қорғалған орта */ }
+    if (hasCamera && v !== 'cam') { stopLive(); setDrawing(false); }
     window.dispatchEvent(new Event('resize'));
-    if (cam) { drawAll(); if (!cs.img) loadSample(0); }
+    if (v === 'cam') { drawAll(); if (!cs.img) loadSample(0); }
   }
 
   // ================= көмекші =================
@@ -3310,12 +4261,18 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   function effectiveRoi() {
     if (!cs.roi) return null;
-    var r = cs.roi, b = cs.base, a = +$('#camAngle').value, th = +$('#camThick').value, s0 = +$('#camStart').value, s1 = +$('#camEnd').value;
-    return { cx: r.cx, cy: r.cy, theta: a * Math.PI / 180, hv: th, t0: b.tA + (b.tB - b.tA) * s0 / 100, t1: b.tA + (b.tB - b.tA) * Math.max(s1, s0 + 2) / 100 };
+    var r = cs.roi, a = $('#camAngle').value, s0 = Math.min(98, +$('#camStart').value);
+    var s1 = Math.max(+$('#camEnd').value, s0 + 2), span = r.t1 - r.t0, sameAngle = a === cs.baseAngle;
+    return {
+      cx: r.cx, cy: r.cy, theta: sameAngle ? r.theta : +a * Math.PI / 180, hv: +$('#camThick').value,
+      t0: r.t0 + span * s0 / 100, t1: s1 === 100 ? r.t1 : r.t0 + span * s1 / 100,
+      curve: sameAngle ? r.curve : undefined
+    };
   }
   function setRoiControls(r) {
-    cs.base = { tA: r.t0, tB: r.t1 };
-    $('#camAngle').value = (r.theta * 180 / Math.PI).toFixed(1); $('#camThick').value = clamp(Math.round(r.hv), 3, 120);
+    $('#camAngle').value = (r.theta * 180 / Math.PI).toFixed(1);
+    cs.baseAngle = $('#camAngle').value;
+    $('#camThick').value = clamp(Math.round(r.hv), 3, 120);
     $('#camStart').value = 0; $('#camEnd').value = 100;
     roiLabels();
   }
@@ -3328,6 +4285,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   function setImage(img, label, keepRoi) {
     cs.img = img; cs.label = label || '';
     if (!keepRoi) cs.flipUser = null;
+    resetGraph();
     var cv = $('#camCanvas'); cv.width = img.width; cv.height = img.height;
     if (!keepRoi || !cs.roi || !cs.lock) {
       var roi = C.detectBand(img);
@@ -3335,6 +4293,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       if (roi) setRoiControls(roi);
     }
     reprocess(true);
+    calState();
   }
   function toImageData(source, w, h) {
     var k = Math.min(1, MAXW / w), cw = Math.round(w * k), ch = Math.round(h * k), c = document.createElement('canvas');
@@ -3346,7 +4305,10 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
   function loadFile(file) {
     if (!file) return;
     stopLive();
-    var done = function (src, w, h) { cs.lock = false; $('#camLock').checked = false; cs.cal = null; setImage(toImageData(src, w, h), file.name); updateStatus('Файл: ' + file.name); };
+    var done = function (src, w, h) {
+      clearCalibration(); cs.source = 'file'; cs.lock = false; $('#camLock').checked = false;
+      setImage(toImageData(src, w, h), file.name); updateStatus('Файл: ' + file.name);
+    };
     if (window.createImageBitmap) {
       createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bm) { done(bm, bm.width, bm.height); })
         .catch(function () { viaImg(); });
@@ -3375,8 +4337,11 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       cs.sim.seed = (cs.sim.seed || 1) + (newSetup ? 7 : 0);
       var g0 = CS.render(sources()[0], species, {}, P.mulberry32(cs.sim.seed * 7919)).geo;
       cs.sim.geo = { theta: g0.theta * 180 / Math.PI, Lb: g0.Lb, cx: g0.cx, cy: g0.cy, sigv: g0.sigv, lamLo: g0.lamLo, lamHi: g0.lamHi, flip: g0.flip, fwhm: g0.fwhm, curv: g0.curv, cutR: g0.cutR, blobR: g0.blobR, blobOff: g0.blobOff };
-      cs.cal = null; cs.lock = false; cs.roi = null; $('#camLock').checked = false;
     }
+    if (newSetup || cs.source !== 'simulation') {
+      clearCalibration(); cs.lock = false; cs.roi = null; $('#camLock').checked = false;
+    }
+    cs.source = 'simulation';
     var o = cs.sim.geo, r = CS.render(src, species, { theta: o.theta, Lb: o.Lb, fixCx: o.cx, fixCy: o.cy, sigv: o.sigv, lamLo: o.lamLo, lamHi: o.lamHi, flip: o.flip, fwhm: o.fwhm, curv: o.curv, cutR: o.cutR, blobR: o.blobR, blobOff: o.blobOff }, rng);
     cs.sim.src = i;
     $$('#camSamples .chip').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.i === i ? 'true' : 'false'); });
@@ -3391,6 +4356,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     cs.live.stop = true;
     try { cs.live.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* ештеңе */ }
     cs.live = null; $('#camLive').textContent = 'Камераны қосу'; $('#camFreeze').hidden = true;
+    $('#camDrawRoi').disabled = false;
   }
   function startLive() {
     if (cs.live) { stopLive(); updateStatus('Камера тоқтатылды'); return; }
@@ -3399,6 +4365,8 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     md.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).then(function (stream) {
       var v = $('#camVideo'); v.srcObject = stream; v.setAttribute('playsinline', ''); v.muted = true;
       return v.play().then(function () {
+        clearCalibration(); cs.source = 'live'; cs.label = 'Тікелей камера'; cs.roi = null;
+        resetGraph(); setDrawing(false); $('#camDrawRoi').disabled = true;
         cs.live = { stream: stream, stop: false, n: 0, last: 0 }; cs.frozen = false; cs.lock = false; $('#camLock').checked = false;
         $('#camLive').textContent = 'Камераны өшіру'; $('#camFreeze').hidden = false; $('#camFreeze').textContent = 'Қатыру';
         updateStatus('Тікелей камера: калибровка үшін алдымен флуоресцентті шамды түсіріңіз');
@@ -3431,23 +4399,38 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     return flip ? { a: -300 / (M - 1), b: 700, provisional: true } : { a: 300 / (M - 1), b: 400, provisional: true };
   }
   function currentCal() { return cs.cal || (cs.prof ? defaultCal(cs.prof) : null); }
+  function resetGraph() {
+    cs.zoom = cs.hover = cs.selected = null;
+    $('#camReadout').replaceChildren();
+  }
 
   function reprocess(full, live) {
     if (!cs.img) return;
     var r = effectiveRoi();
-    if (!r) { cs.prof = null; cs.ai = null; cs.ver = null; drawAll(); renderAI(); updateStatus('Спектр жолағы табылмады: суретті жарығырақ етіп, не ROI-ны қолмен баптаңыз'); return; }
+    if (!r) {
+      cs.prof = cs.ai = cs.ver = null;
+      clearCalibration(); drawAll(); renderAI();
+      updateStatus('Спектр жолағы табылмады: суретті жарығырақ етіп, не ROI-ны қолмен баптаңыз');
+      return;
+    }
     var prof = C.extractProfile(cs.img, r);
+    if (cs.cal && !CAL.axisMatches(cs.calAxis, cs.img, r, prof)) {
+      clearCalibration(); resetGraph();
+      msg('#camCalMsg', 'Жолақ немесе кадр өлшемі өзгерді. Калибровканы қайта жасаңыз.');
+    }
     cs.dir = C.colorDirection(prof);
     if (cs.flipUser === null) $('#camFlip').checked = cs.dir.flip;      // автоматты бағыт; қолмен өзгертсе — ол басым
     if (live && cs.prof && cs.prof.M === prof.M) for (var i = 0; i < prof.M; i++) prof.p[i] = 0.35 * prof.p[i] + 0.65 * cs.prof.p[i];     // уақыт бойынша тегістеу
     cs.prof = prof;
+    if (full) { cs.ver = null; cs.ai = null; }
+    updateProfileButtons();
     drawImage(); drawGraph();
-    scheduleAI(full ? 0 : 280);
+    if (full || !cs.aiTimer) scheduleAI(full ? 0 : 280);
   }
 
   function scheduleAI(delay) {
     clearTimeout(cs.aiTimer);
-    cs.aiTimer = setTimeout(analyze, delay);
+    cs.aiTimer = setTimeout(function () { cs.aiTimer = 0; analyze(); }, delay);
   }
 
   function analyze() {
@@ -3473,11 +4456,21 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     }
     var r = effectiveRoi(); if (!r) return;
     var ct = Math.cos(r.theta), st = Math.sin(r.theta), hv = r.hv;
-    function pt(t, s) { return [r.cx + t * ct - s * st, r.cy + t * st + s * ct]; }
+    function pt(t, s) {
+      s += C.bandOffset(r, t);
+      return [r.cx + t * ct - s * st, r.cy + t * st + s * ct];
+    }
+    function trace(from, to, s, move) {
+      var n = r.curve ? 24 : 1;
+      for (var i = 0; i <= n; i++) {
+        var p = pt(from + (to - from) * i / n, s);
+        if (i === 0 && move) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+      }
+    }
     var c = [pt(r.t0, -hv), pt(r.t1, -hv), pt(r.t1, hv), pt(r.t0, hv)], lw = Math.max(1.5, img.width / 500);
     ctx.lineWidth = lw; ctx.strokeStyle = cs.lock ? '#78cdff' : '#f0b64a';
-    ctx.beginPath(); ctx.moveTo(c[0][0], c[0][1]); for (var i = 1; i < 4; i++) ctx.lineTo(c[i][0], c[i][1]); ctx.closePath(); ctx.stroke();
-    ctx.setLineDash([lw * 4, lw * 3]); ctx.beginPath(); var a = pt(r.t0, 0), b = pt(r.t1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); trace(r.t0, r.t1, -hv, true); trace(r.t1, r.t0, hv, false); ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([lw * 4, lw * 3]); ctx.beginPath(); trace(r.t0, r.t1, 0, true); ctx.stroke(); ctx.setLineDash([]);
     var cal = currentCal(), fs = Math.max(12, img.width / 55);
     ctx.font = '600 ' + fs + 'px Inter, system-ui, sans-serif'; ctx.fillStyle = ctx.strokeStyle; ctx.textBaseline = 'bottom';
     if (cal && cs.prof) {
@@ -3489,25 +4482,36 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   // ================= график =================
   var ML = 40, MR = 10, MT = 12, MB = 26;
+  function profilePeaks(p) {
+    var mx = p.reduce(function (a, b) { return Math.max(a, b); }, 1e-9);
+    return C.findPeaks(p, 0.14 * mx, Math.max(4, p.length / 60));
+  }
   function drawGraph() {
+    $('#camPrevPeak').disabled = $('#camNextPeak').disabled = !cs.prof;
+    $('#camZoomReset').disabled = !cs.zoom;
+    $('#camZoomIn').disabled = !cs.prof || !!(cs.zoom && cs.zoom[1] - cs.zoom[0] <= 20);
     var cv = $('#camGraph'), f = fit(cv); if (!f) return;
     var ctx = f.ctx, W = f.w, H = f.h, pw = W - ML - MR, ph = H - MT - MB, bot = MT + ph;
     var th = { bg: css('--graph-bg'), grid: css('--graph-grid'), axis: css('--graph-axis'), curve: css('--graph-curve'), accent: css('--accent'), fg: css('--fg') };
     ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
-    if (!cs.prof) { ctx.fillStyle = th.axis; ctx.font = '13px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Спектр жоқ', W / 2, H / 2); return; }
+    if (!cs.prof) { cs._plot = null; ctx.fillStyle = th.axis; ctx.font = '13px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Спектр жоқ', W / 2, H / 2); return; }
     var cal = currentCal(), M = cs.prof.M, p = C.gauss(cs.prof.p, 0.8), mx = 1e-9, i;
     for (i = 0; i < M; i++) if (p[i] > mx) mx = p[i];
     var la = C.lam(cal, 0), lb = C.lam(cal, M - 1), lo = Math.min(la, lb), hi = Math.max(la, lb);
+    if (cs.zoom) { lo = cs.zoom[0]; hi = cs.zoom[1]; }
     function X(l) { return ML + (l - lo) / (hi - lo) * pw; }
     function Y(v) { return bot - clamp(v / mx, 0, 1.05) / 1.05 * ph; }
     ctx.font = '11px "JetBrains Mono", ui-monospace, monospace'; ctx.lineWidth = 1;
-    var span = hi - lo, xs = span > 500 ? 100 : span > 250 ? 50 : 20;
+    var span = hi - lo, xs = span > 500 ? 100 : span > 250 ? 50 : span > 80 ? 20 : span > 40 ? 10 : 5;
+    $('#camZoomIn').disabled = span <= 20;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (var w = Math.ceil(lo / xs) * xs; w <= hi; w += xs) { ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(X(w), MT); ctx.lineTo(X(w), bot); ctx.stroke(); ctx.fillStyle = th.axis; ctx.fillText(String(w), X(w), bot + 8); }
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     [0, 0.5, 1].forEach(function (t) { ctx.strokeStyle = th.grid; ctx.beginPath(); ctx.moveTo(ML, Y(t * mx)); ctx.lineTo(W - MR, Y(t * mx)); ctx.stroke(); ctx.fillStyle = th.axis; ctx.fillText(t.toFixed(1), ML - 6, Y(t * mx)); });
-    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillStyle = cal.provisional ? th.accent : th.axis;
-    ctx.fillText(cal.provisional ? 'λ, нм (калибровка жоқ: шамамен)' : 'λ, нм', W - MR, H - 1);
+    var approximate = cal.provisional || cal.approx;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillStyle = approximate ? th.accent : th.axis;
+    ctx.fillText(approximate ? 'λ, нм (шамамен)' : 'λ, нм', W - MR, H - 1);
+    ctx.save(); ctx.beginPath(); ctx.rect(ML, MT, pw, ph); ctx.clip();
     // 380–780 терезесі
     [380, 780].forEach(function (e) { if (e > lo && e < hi) { ctx.setLineDash([4, 4]); ctx.strokeStyle = th.axis; ctx.beginPath(); ctx.moveTo(X(e), MT); ctx.lineTo(X(e), bot); ctx.stroke(); ctx.setLineDash([]); } });
     // профиль: түсті бояу + қисық
@@ -3542,7 +4546,7 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       });
     });
     // шыңдардың атаулары
-    var peaks = C.findPeaks(p, 0.14 * mx, Math.max(4, M / 60)).slice(0, 6);
+    var peaks = profilePeaks(p).filter(function (pk) { var l = C.lam(cal, pk.x); return l >= lo && l <= hi; }).slice(0, 6);
     ctx.font = '600 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = th.fg;
     var placed = [];
     peaks.forEach(function (pk) {
@@ -3557,7 +4561,9 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       ctx.beginPath(); ctx.moveTo(xa, MT); ctx.lineTo(xa, bot); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = MARK[k]; ctx.textBaseline = 'top'; ctx.fillText(String(k + 1), xa, MT + 1);
     });
-    if (cs.hover != null) { var hx = X(cs.hover); if (hx >= ML && hx <= W - MR) { ctx.strokeStyle = th.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx, MT); ctx.lineTo(hx, bot); ctx.stroke(); ctx.globalAlpha = 1; } }
+    var focus = cs.hover == null ? cs.selected : cs.hover;
+    if (focus != null) { var hx = X(focus); if (hx >= ML && hx <= W - MR) { ctx.strokeStyle = th.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx, MT); ctx.lineTo(hx, bot); ctx.stroke(); ctx.globalAlpha = 1; } }
+    ctx.restore();
     cs._plot = { lo: lo, hi: hi, W: W, cal: cal, M: M };
   }
   function drawAll() { drawImage(); drawGraph(); }
@@ -3576,18 +4582,17 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       bars += '<div class="bar' + (isP ? ' pred' : '') + '" style="grid-template-columns:52px 1fr 44px"><span class="num">' + sname(names[k]) + '</span><span class="track"><span class="fill" style="display:block;width:' + (p * 100).toFixed(1) + '%"></span></span><span class="pc">' + Math.round(p * 100) + '%</span></div>';
     });
     var pills = '', verdict, conf = a.confirmed, pg = a.predGated;
+    var evidence = SL.spectrumConfidence.summarize(a, names);
     if (a.cal.provisional) pills += '<span class="pill warn">калибровка жоқ: сенімсіз</span> ';
     else if (a.cal.approx) pills += '<span class="pill warn">калибровка түс бойынша: шамамен ±15–20 нм</span> ';
     else pills += '<span class="pill ok">калибровка: ' + (a.cal.kind === 'cfl' ? 'CFL' : '2 нүкте') + (a.cal.c ? ', квадраттық' : '') + (a.cal.rms ? ', RMS ' + a.cal.rms.toFixed(1) + ' нм' : '') + '</span> ';
     pills += '<span class="pill">ажыратымдылық ≈ ' + cs.fwhm.toFixed(1) + ' нм</span> <span class="pill' + (a.continuum ? ' warn' : '') + '">сызықтылық ' + a.lin.toFixed(2) + '</span>';
-    if (pg.length) verdict = 'ЖИ анықтады: ' + pg.map(function (k) {
-      var ok = conf.indexOf(names[k]) >= 0;
-      return '<b>' + sname(names[k]) + ' (' + Math.round(res.probs[k] * 100) + '%)</b>' + (ok ? ' <span class="pill ok">расталды</span>' : ' <span class="pill warn">расталмады</span>');
-    }).join(', ') + '.';
-    else if (a.continuum) verdict = 'Атомдық сызықтар <b>табылмады</b>: үздіксіз спектр (қыздыру шамы, LED, күн) не сигнал әлсіз. Тар шыңдар: ' + a.narrow.length + '.' +
-      (a.pred.length ? ' Модельдің шикі болжамы (' + a.pred.map(function (k) { return sname(names[k]); }).join(', ') + ') тар шыңдар болмағандықтан қабылданбады.' : '');
-    else verdict = 'Сенімді түр жоқ: ешбір түрдің ықтималдығы 50%-дан аспайды.';
-    if (pg.some(function (k) { return names[k] === 'CFL'; })) verdict += ' <i>CFL</i> — люминофорлы флуоресцентті (үнемдегіш) шам: Hg сызықтары + Tb³⁺/Eu³⁺ фосфор сызықтары.';
+    function candidateList(list) { return list.map(function (p) { return '<b>' + sname(p.name) + '</b>'; }).join(', '); }
+    if (evidence.status === 'unknown') verdict = '<b>Құрамы белгісіз.</b> Анықтауға жеткілікті дәлел жиналмады.';
+    else verdict = (evidence.status === 'partial' ? 'Жартылай анықталды. ' : '') + 'Спектр сызықтарымен қолдау тапқан түрлер: ' + candidateList(evidence.supported) + '.';
+    if (evidence.uncertain.length) verdict += ' Күмәнді түрлер: ' + candidateList(evidence.uncertain) + '.';
+    if (evidence.reasons.includes('no-narrow-lines')) verdict += ' Айқын тар атомдық сызықтар табылмады.';
+    if (evidence.supported.some(function (p) { return p.name === 'CFL'; })) verdict += ' <i>CFL</i> — люминофорлы флуоресцентті (үнемдегіш) шам: Hg сызықтары + Tb³⁺/Eu³⁺ фосфор сызықтары.';
     var warn = '';
     var satN = 0, top = 0, M = cs.prof.M, thr = 0, i;
     for (i = 0; i < M; i++) thr = Math.max(thr, cs.prof.p[i]);
@@ -3613,13 +4618,70 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     }
     html(box, '<div>' + pills + '</div><div class="bars" style="margin-top:12px;grid-template-columns:1fr">' + bars + '</div><p class="verdict" style="margin:12px 0 0">' + verdict + '</p>' +
       (warn ? '<ul class="warns">' + warn + '</ul>' : '') + (ver ? '<ul class="verify">' + ver + '</ul>' : '') +
-      '<p class="note">Модель көрінетін аймақта (380–780 нм) камера бұрмалаулары қосылған синтетикалық спектрлерде оқытылған (F1 ' + (MC.metrics && MC.metrics.f1 ? MC.metrics.f1.toFixed(2) : '?') + '), нақты камерада тексерілмеген. Штрихтар графикте болжам сызықтарын көрсетеді: қою — спектрде бар, жарты — жоқ. Есептеу: ' + a.ms.toFixed(0) + ' мс.</p>');
+      '<p class="note">Бағандар модель ұпайын көрсетеді. Құрамды бағалауда калибровка, өлшенген аралық және спектр сызықтарының сәйкестігі ескеріледі. Есептеу: ' + a.ms.toFixed(0) + ' мс.</p>');
   }
 
   function updateStatus(t) { $('#camStatus').textContent = t; }
   function calState() {
     var c = cs.cal, el = $('#camCalState');
-    el.textContent = c ? 'Калибровка: ' + c.kind + (c.c ? ' (квадраттық)' : '') + (c.rms ? ', RMS ' + c.rms.toFixed(1) + ' нм' : '') + ', ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель' : 'Калибровка жоқ';
+    el.textContent = c ? 'Калибровка: ' + c.kind + (c.c ? ' (квадраттық)' : '') + ', ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель' : 'Калибровка жоқ';
+    var d = CAL.diagnostics(c), rows = d ? d.lines : [];
+    $('#camCalDetails').hidden = !rows.length;
+    $('#camCalQuality').textContent = rows.length
+      ? 'RMS ' + d.rms.toFixed(2) + ' нм · Ең үлкен ауытқу ' + d.maxError.toFixed(2) + ' нм.' +
+          (d.kind === 'two-point' ? ' Екі нүкте арқылы есептелген сәйкестікті бөлек эталон сызығымен тексеруге болады.' : '')
+      : '';
+    $('#camCalLines').replaceChildren(...rows.map(function (match) {
+      var tr = document.createElement('tr');
+      [match.name, match.referenceNm.toFixed(2), match.fittedNm.toFixed(2), match.errorNm.toFixed(2)].forEach(function (v) {
+        tr.insertCell().textContent = v;
+      });
+      return tr;
+    }));
+    updateProfileButtons();
+  }
+  function clearCalibration() {
+    cs.cal = cs.calAxis = null;
+    cs.anchors = [{ x: null }, { x: null }]; cs.pick = 0;
+    msg('#camCalMsg', ''); msg('#camPickMsg', '');
+    calState();
+  }
+  function useCalibration(cal) {
+    cs.calAxis = CAL.captureAxis(cs.img, effectiveRoi(), cs.prof);
+    cs.cal = cal;
+    lockRoi(true); resetGraph(); calState(); reprocess(true);
+  }
+
+  function hasMeasuredAxis() {
+    return Boolean(cs.prof && cs.cal && cs.calAxis && !cs.cal.approx && !cs.cal.provisional &&
+      Math.min(C.lam(cs.cal, 0), C.lam(cs.cal, cs.prof.M - 1)) > 0);
+  }
+  function updateProfileButtons() {
+    var selected = Boolean($('#camProfiles').value);
+    var measured = hasMeasuredAxis();
+    $('#camApplyProfile').disabled = !selected || !cs.img;
+    $('#camDeleteProfile').disabled = !selected;
+    $('#camSaveProfile').disabled = $('#camCapture').disabled = !measured;
+  }
+  function refreshProfiles(selected) {
+    var select = $('#camProfiles'), profiles = CAL.listProfiles(window.localStorage);
+    select.replaceChildren(new Option('Профиль таңдаңыз', ''), ...profiles.map(function (p) { return new Option(p.name, p.name); }));
+    if (selected && profiles.some(function (p) { return p.name === selected; })) select.value = selected;
+    updateProfileButtons();
+  }
+  function changeProfile(operation) {
+    try { msg('#camProfileStatus', operation()); }
+    catch (e) { msg('#camProfileStatus', e.message || 'Профильмен жұмыс істеу мүмкін болмады.', 'bad'); }
+  }
+  function applyProfile(name) {
+    var profile = CAL.listProfiles(window.localStorage).find(function (p) { return p.name === name; });
+    if (!profile) throw new Error('Калибровка профилі табылмады.');
+    var restored = CAL.restoreProfile(profile, cs.img);
+    var prof = C.extractProfile(cs.img, restored.roi);
+    if (prof.M !== restored.length) throw new Error('Спектр осінің ұзындығы профильге сәйкес емес.');
+    cs.roi = restored.roi; setRoiControls(cs.roi); cs.prof = prof;
+    clearCalibration(); useCalibration(restored.cal);
+    return '«' + name + '» профилі қолданылды.';
   }
 
   // ================= калибровка =================
@@ -3630,28 +4692,39 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     if (!c) {
       var h = C.calibrateByHue(cs.prof);        // CFL сызықтары табылмаса: түстен шамамен
       if (h) {
-        cs.cal = h; lockRoi(true); calState(); reprocess(true);
+        useCalibration(h);
         msg('#camCalMsg', 'CFL сызықтары табылмады. Түс бойынша шамамен калибровка қолданылды (қателігі ±15–20 нм, RMS ' + h.rms.toFixed(0) + ' нм): нәтижені тек бағдар ретінде қолданыңыз, не CFL түсіріп қайталаңыз.', 'bad');
         return;
       }
       msg('#camCalMsg', 'Флуоресцентті шам сызықтары табылмады. Кадрда флуоресцентті/CFL шамның спектрі көрінетініне көз жеткізіңіз, не қолмен калибровка жасаңыз.', 'bad'); return;
     }
-    cs.cal = c; lockRoi(true);
+    useCalibration(c);
     msg('#camCalMsg', 'Калибровка дайын: ' + c.matched.map(function (m) { return m.name; }).join(', ') + '; RMS ' + c.rms.toFixed(1) + ' нм. ROI бекітілді: енді басқа көздерді түсіріңіз.');
-    calState(); reprocess(true);
   }
   function doManualCal() {
     var a = cs.anchors, w1 = parseFloat($('#camWl1').value), w2 = parseFloat($('#camWl2').value);
-    if (a[0].x == null || a[1].x == null || !isFinite(w1) || !isFinite(w2)) { msg('#camPickMsg', 'Екі нүктені графиктен таңдап, екі толқын ұзындығын енгізіңіз.', 'bad'); return; }
+    if (!cs.prof || a[0].x == null || a[1].x == null || !isFinite(w1) || !isFinite(w2) || w1 < 300 || w2 < 300 || w1 > 900 || w2 > 900) {
+      msg('#camPickMsg', 'Екі нүктені графиктен таңдап, 300–900 нм аралығындағы толқын ұзындықтарын енгізіңіз.', 'bad'); return;
+    }
     var c = C.calib2(a[0].x, w1, a[1].x, w2);
     if (!c) { msg('#camPickMsg', 'Нүктелер немесе толқын ұзындықтары бірдей.', 'bad'); return; }
-    cs.cal = c; lockRoi(true); msg('#camPickMsg', 'Калибровка қолданылды: ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель.'); calState(); reprocess(true);
+    c.matched = [{ x: a[0].x, wl: w1, name: '1-нүкте' }, { x: a[1].x, wl: w2, name: '2-нүкте' }];
+    if (Math.min(C.lam(c, 0), C.lam(c, cs.prof.M - 1)) <= 0) {
+      msg('#camPickMsg', 'Бұл нүктелер спектр шетінде жарамсыз толқын ұзындығын береді. Эталон сызықтарын тексеріңіз.', 'bad'); return;
+    }
+    useCalibration(c);
+    msg('#camPickMsg', 'Калибровка қолданылды: ' + Math.abs(c.a).toFixed(3) + ' нм/пиксель.');
   }
 
   // ================= әрекеттерді байлау =================
+  function setDrawing(active) {
+    cs.drawing = active; cs.drag = null;
+    $('#camDrawRoi').setAttribute('aria-pressed', String(active));
+    $('.cam-stage').classList.toggle('is-drawing', active);
+    if (!$('#viewCam').hidden) drawImage();
+  }
+
   function bind() {
-    $('#viewSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setView(b.dataset.view); });
-    window.addEventListener('hashchange', function () { var v = location.hash === '#camera' ? 'cam' : 'lab'; if (($('#viewCam').hidden) === (v === 'cam')) setView(v); });
     $('#camSamples').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (b) loadSample(+b.dataset.i); });
     $('#camReshoot').addEventListener('click', function () { loadSample(cs.sim.src == null ? 0 : cs.sim.src, true); });
     $('#camPickFile').addEventListener('click', function () { $('#camFile').click(); });
@@ -3663,37 +4736,80 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
     ['camAngle', 'camThick', 'camStart', 'camEnd'].forEach(function (id) {
       $('#' + id).addEventListener('input', function () { lockRoi(true); roiLabels(); reprocess(true); });
     });
-    $('#camAuto').addEventListener('click', function () { if (!cs.img) return; lockRoi(false); cs.cal = null; calState(); var roi = C.detectBand(cs.img); cs.roi = roi; if (roi) setRoiControls(roi); reprocess(true); });
+    $('#camAuto').addEventListener('click', function () {
+      if (!cs.img) return;
+      setDrawing(false); lockRoi(false); clearCalibration(); resetGraph();
+      cs.roi = C.detectBand(cs.img);
+      if (cs.roi) { setRoiControls(cs.roi); updateStatus('Спектр жолағы автоматты түрде табылды.'); }
+      reprocess(true);
+    });
     $('#camLock').addEventListener('change', function () { cs.lock = this.checked; drawImage(); });
-    $('#camFlip').addEventListener('change', function () { cs.flipUser = this.checked; reprocess(true); });
+    $('#camFlip').addEventListener('change', function () {
+      cs.flipUser = this.checked; clearCalibration(); resetGraph(); reprocess(true);
+    });
     $('#camAutoCal').addEventListener('click', doAutoCal);
-    $('#camClearCal').addEventListener('click', function () { cs.cal = null; cs.anchors = [{ x: null, wl: null }, { x: null, wl: null }]; msg('#camCalMsg', ''); calState(); reprocess(true); });
+    $('#camClearCal').addEventListener('click', function () { clearCalibration(); resetGraph(); reprocess(true); });
     $('#camPick1').addEventListener('click', function () { cs.pick = 1; msg('#camPickMsg', 'Графиктен 1-сызықты басыңыз.'); });
     $('#camPick2').addEventListener('click', function () { cs.pick = 2; msg('#camPickMsg', 'Графиктен 2-сызықты басыңыз.'); });
     $('#camApplyCal').addEventListener('click', doManualCal);
     $$('[data-laser]').forEach(function (b) { b.addEventListener('click', function () { var i1 = $('#camWl1'), i2 = $('#camWl2'); (i1.value === '' ? i1 : i2).value = b.dataset.laser; }); });
+    $('#camProfiles').addEventListener('change', updateProfileButtons);
+    $('#camSaveProfile').addEventListener('click', function () { changeProfile(function () {
+      var profile = CAL.makeProfile($('#camProfileName').value, cs.cal, cs.img, effectiveRoi(), cs.prof);
+      CAL.saveProfile(window.localStorage, profile);
+      refreshProfiles(profile.name); $('#camProfileName').value = '';
+      return '«' + profile.name + '» профилі сақталды.';
+    }); });
+    $('#camApplyProfile').addEventListener('click', function () { changeProfile(function () { return applyProfile($('#camProfiles').value); }); });
+    $('#camDeleteProfile').addEventListener('click', function () { changeProfile(function () {
+      CAL.deleteProfile(window.localStorage, $('#camProfiles').value);
+      refreshProfiles(); return 'Профиль өшірілді.';
+    }); });
+    $('#camCapture').addEventListener('click', function () {
+      if (!hasMeasuredAxis()) return;
+      var cal = cs.cal, p = cs.prof.p;
+      var wavelengths = Array.from(p, function (_, i) { return C.lam(cal, i); });
+      var peaks = profilePeaks(C.gauss(p, 0.8)).map(function (pk) { return { wavelength: C.lam(cal, pk.x), intensity: pk.h }; });
+      SL.measurementPanel.capture({ name: cs.label || 'Камера спектрі', source: 'camera', wavelengths: wavelengths, intensity: p, peaks: peaks });
+    });
 
     // қолмен ROI: суретте спектр жолағы бойымен сүйреңіз (нақты фотода автоматты табу сәтсіз болғанда)
     var cvImg = $('#camCanvas');
+    $('#camDrawRoi').addEventListener('click', function () {
+      setDrawing(!cs.drawing);
+      if (cs.drawing) updateStatus('Жолақтың бір шетінен екінші шетіне сызық сүйреңіз.');
+    });
     function imgPt(e) {       // CSS object-fit: contain ескеріледі (max-height-тан кейін сурет жиектерінде бос орын болады)
       var r = cvImg.getBoundingClientRect(), k = Math.min(r.width / cvImg.width, r.height / cvImg.height);
-      return { x: (e.clientX - r.left - (r.width - cvImg.width * k) / 2) / k, y: (e.clientY - r.top - (r.height - cvImg.height * k) / 2) / k };
+      return {
+        x: clamp((e.clientX - r.left - (r.width - cvImg.width * k) / 2) / k, 0, cvImg.width - 1),
+        y: clamp((e.clientY - r.top - (r.height - cvImg.height * k) / 2) / k, 0, cvImg.height - 1)
+      };
     }
     cvImg.addEventListener('pointerdown', function (e) {
-      if (!cs.img || cs.live) return;
-      cs.drag = { a: imgPt(e), b: imgPt(e) }; try { cvImg.setPointerCapture(e.pointerId); } catch (er) { /* ештеңе */ }
+      if (!cs.img || cs.live || !e.isPrimary || e.button !== 0 || (e.pointerType === 'touch' && !cs.drawing)) return;
+      cs.drag = { a: imgPt(e), b: imgPt(e), id: e.pointerId };
+      cvImg.setPointerCapture(e.pointerId);
     });
-    cvImg.addEventListener('pointermove', function (e) { if (cs.drag) { cs.drag.b = imgPt(e); drawImage(); } });
+    cvImg.addEventListener('pointermove', function (e) {
+      if (cs.drag && cs.drag.id === e.pointerId) { cs.drag.b = imgPt(e); drawImage(); }
+    });
     cvImg.addEventListener('pointerup', function (e) {
-      var d = cs.drag; cs.drag = null; if (!d) return;
+      var d = cs.drag; if (!d || d.id !== e.pointerId) return;
+      cs.drag = null;
       d.b = imgPt(e);
       var dx = d.b.x - d.a.x, dy = d.b.y - d.a.y, len = Math.hypot(dx, dy);
       if (len < 20) { drawImage(); return; }                       // кездейсоқ басу
       if (dx < 0) { dx = -dx; dy = -dy; }                           // бағыт: сол → оң (түс бағыты өзі анықталады)
       var th = Math.atan2(dy, dx), hv = clamp(Math.round(+$('#camThick').value || 12), 3, 120);
       cs.roi = { cx: (d.a.x + d.b.x) / 2, cy: (d.a.y + d.b.y) / 2, theta: th, hv: hv, t0: -len / 2, t1: len / 2, info: { manual: true } };
-      setRoiControls(cs.roi); lockRoi(true); cs.cal = null; calState(); reprocess(true);
+      setRoiControls(cs.roi); setDrawing(false); lockRoi(true); clearCalibration(); resetGraph(); reprocess(true);
       updateStatus('ROI қолмен берілді: ' + Math.round(th * 180 / Math.PI) + '°, ұзындығы ' + Math.round(len) + ' px');
+    });
+    ['pointercancel', 'lostpointercapture'].forEach(function (name) {
+      cvImg.addEventListener(name, function (e) {
+        if (cs.drag && cs.drag.id === e.pointerId) { cs.drag = null; drawImage(); }
+      });
     });
 
     var g = $('#camGraph');
@@ -3702,27 +4818,63 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
       var r = g.getBoundingClientRect(), x = e.clientX - r.left, f = (x - ML) / (r.width - ML - MR);
       return f < 0 || f > 1 ? null : cs._plot.lo + f * (cs._plot.hi - cs._plot.lo);
     }
-    g.addEventListener('pointermove', function (e) {
-      var l = lamFrom(e); cs.hover = l;
+    function readPeak(l) {
       var ro = $('#camReadout');
-      if (l == null || !cs.prof) { ro.innerHTML = ''; drawGraph(); return; }
+      if (l == null || !cs.prof) { ro.replaceChildren(); return; }
       var cal = cs._plot.cal, idx = C.idx(cal, l, cs.prof.M), i0 = clamp(Math.round(idx), 0, cs.prof.M - 1);
       var near = [];
       species.forEach(function (sp) { var j = P.nearestLine(sp, l); if (Math.abs(sp.wl[j] - l) <= Math.max(2.5, cs.fwhm * 0.8)) near.push({ sp: sp, wl: sp.wl[j], rel: Math.log10(sp.rel[j] + 1) }); });
       near.sort(function (a, b) { return b.rel - a.rel; });
       ro.innerHTML = '<span>λ = <b class="num">' + l.toFixed(1) + ' нм</b></span><span>пиксель = <b class="num">' + i0 + '</b></span>' + (near.length ? '<span>Жақын: ' + near.slice(0, 4).map(function (q) { return '<b>' + sname(q.sp.name) + ' ' + q.wl.toFixed(1) + '</b>'; }).join(', ') + '</span>' : '');
-      drawGraph();
+    }
+    g.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      cs.hover = lamFrom(e); readPeak(cs.hover == null ? cs.selected : cs.hover); drawGraph();
     });
-    g.addEventListener('pointerleave', function () { cs.hover = null; $('#camReadout').innerHTML = ''; drawGraph(); });
+    g.addEventListener('pointerleave', function () {
+      cs.hover = null; readPeak(cs.selected); drawGraph();
+    });
     g.addEventListener('click', function (e) {
-      if (!cs.pick || !cs.prof) return;
+      if (!cs.prof) return;
       var l = lamFrom(e); if (l == null) return;
-      var cal = cs._plot.cal, idx = C.idx(cal, l, cs.prof.M), y = C.gauss(cs.prof.p, 1), best = clamp(Math.round(idx), 0, cs.prof.M - 1), bv = -1;
-      for (var j = Math.max(0, best - 10); j <= Math.min(cs.prof.M - 1, best + 10); j++) if (y[j] > bv) { bv = y[j]; best = j; }   // жақын шыңға жабысу
-      cs.anchors[cs.pick - 1].x = best;
-      msg('#camPickMsg', cs.pick + '-нүкте: пиксель ' + best + '. Оның нақты толқын ұзындығын енгізіңіз.');
-      cs.pick = 0; drawGraph();
+      selectPeak(l);
     });
+    function selectPeak(l, index) {
+      cs.hover = null;
+      var cal = cs._plot.cal, best = index;
+      if (best === undefined) {
+        var center = clamp(Math.round(C.idx(cal, l, cs.prof.M)), 0, cs.prof.M - 1);
+        var y = C.gauss(cs.prof.p, 1), last = Math.min(cs.prof.M - 1, center + 10);
+        best = center;
+        for (var j = Math.max(0, center - 10); j <= last; j++) if (y[j] > y[best]) best = j;
+      }
+      cs.selected = C.lam(cal, best);
+      if (cs.pick) {
+        cs.anchors[cs.pick - 1].x = best;
+        msg('#camPickMsg', cs.pick + '-нүкте: пиксель ' + best + '. Оның нақты толқын ұзындығын енгізіңіз.');
+        cs.pick = 0;
+      }
+      readPeak(cs.selected); drawGraph();
+    }
+    function stepPeak(direction) {
+      if (!cs._plot) return;
+      var plot = cs._plot, peaks = profilePeaks(C.gauss(cs.prof.p, 0.8)).map(function (p) {
+        return { wl: C.lam(plot.cal, p.i), i: p.i };
+      }).filter(function (p) { return p.wl >= plot.lo && p.wl <= plot.hi; });
+      peaks.sort(function (a, b) { return direction * (a.wl - b.wl); });
+      var peak = peaks.find(function (p) { return cs.selected == null || direction * (p.wl - cs.selected) > 1e-6; }) || peaks[0];
+      if (peak) selectPeak(peak.wl, peak.i);
+    }
+    $('#camPrevPeak').addEventListener('click', function () { stepPeak(-1); });
+    $('#camNextPeak').addEventListener('click', function () { stepPeak(1); });
+    $('#camZoomIn').addEventListener('click', function () {
+      if (!cs._plot) return;
+      var plot = cs._plot, width = Math.max(20, (plot.hi - plot.lo) / 2);
+      var center = cs.selected == null ? (plot.lo + plot.hi) / 2 : cs.selected;
+      var lo = clamp(center - width / 2, plot.lo, plot.hi - width);
+      cs.zoom = [lo, lo + width]; drawGraph();
+    });
+    $('#camZoomReset').addEventListener('click', function () { cs.zoom = null; drawGraph(); });
 
     // сүйреп апару және буфер (Ctrl+V)
     var stage = $('.cam-stage');
@@ -3741,11 +4893,12 @@ table.lines tr[aria-selected="true"] { background: color-mix(in srgb, var(--acce
 
   function init() {
     buildSamples(); bind(); roiLabels(); calState();
+    changeProfile(function () { refreshProfiles(); return ''; });
     $('#camAiMeta').textContent = '1D-CNN + Transformer · камера домені (380–780 нм)';
     $('#camFooter').innerHTML = 'Кескіннен спектр: жолақ PCA арқылы табылады, бұрышы мен қисықтығы ескеріліп профиль алынады (sRGB → сызықтық, фон алынады), калибровка λ = a·пиксель + b. ' +
       'Көрінетін аймақтағы (380–780 нм) 1024 нүктелі спектр камера моделіне беріледі; ол ажыратымдылық 1.5–28 нм (кең, қаныққан сызықтарды қоса), калибровка қателігі мен сызықтық емес дисперсия, сезімталдық қисығы, қанығу мен блуминг, фон, бөгде (фосфор) сызықтар және «CFL» көз класы қосылған синтетикалық спектрлерде оқытылған. ' +
       'Виртуал камера — модель, нақты фото емес. Нақты камерада сапа тексерілмеген: нәтижені графиктегі сызық сәйкестігімен салыстырыңыз.';
-    if (location.hash === '#camera') setView('cam');
+    setView(viewFromHash());
   }
   init();
 })();
